@@ -70,7 +70,18 @@ export default function Inventory() {
   const [receiptTarget, setReceiptTarget] = useState(null) // {id, name}
 
   const load = () => api.getItems().then(setItems).catch(console.error)
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    // Refresh when the browser tab becomes visible (handles switching back from Sold page)
+    const onVisible = () => { if (document.visibilityState === 'visible') load() }
+    document.addEventListener('visibilitychange', onVisible)
+    // Poll every 30s so sold items disappear even without navigating away
+    const interval = setInterval(load, 30000)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      clearInterval(interval)
+    }
+  }, [])
 
   // Sold items live only in the Sold tab — inventory shows active items only
   const activeItems = items.filter((i) => i.status !== 'Sold')

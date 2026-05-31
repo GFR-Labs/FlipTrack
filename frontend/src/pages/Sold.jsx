@@ -11,6 +11,8 @@ function SaleForm({ initial, items, onSubmit, onClose }) {
   const [form, setForm] = useState(
     initial ?? { item_id: items[0]?.id ?? '', sale_price: '', platform_fees: '0', shipping_cost: '0', sold_date: today() }
   )
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
   const item = items.find((i) => i.id === parseInt(form.item_id))
@@ -18,8 +20,27 @@ function SaleForm({ initial, items, onSubmit, onClose }) {
     ? (parseFloat(form.sale_price) || 0) - (parseFloat(form.platform_fees) || 0) - (parseFloat(form.shipping_cost) || 0) - item.purchase_price
     : null
 
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSaving(true)
+    try {
+      await onSubmit({
+        ...form,
+        item_id: parseInt(form.item_id),
+        sale_price: parseFloat(form.sale_price),
+        platform_fees: parseFloat(form.platform_fees),
+        shipping_cost: parseFloat(form.shipping_cost),
+      })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit({ ...form, item_id: parseInt(form.item_id), sale_price: parseFloat(form.sale_price), platform_fees: parseFloat(form.platform_fees), shipping_cost: parseFloat(form.shipping_cost) }) }} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <div>
         <label className="label block mb-1">Item</label>
         <select className="input" required value={form.item_id} onChange={(e) => set('item_id', e.target.value)}>
@@ -52,8 +73,11 @@ function SaleForm({ initial, items, onSubmit, onClose }) {
           Estimated Net Profit: {fmt(net)}
         </div>
       )}
+      {error && <p className="text-red-400 text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
-        <button type="submit" className="btn-primary flex-1 justify-center">Record Sale</button>
+        <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">
+          {saving ? 'Recording…' : 'Record Sale'}
+        </button>
         <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
       </div>
     </form>
@@ -71,6 +95,9 @@ export default function Sold() {
     api.getItems().then(setItems).catch(console.error)
   }
   useEffect(() => { load() }, [])
+
+  // Only unsold items are valid targets for a new sale
+  const availableItems = items.filter((i) => i.status !== 'Sold')
 
   const handleAdd = async (data) => { await api.createSale(data); setModal(null); load() }
   const handleEdit = async (data) => { await api.updateSale(modal.id, data); setModal(null); load() }
@@ -169,14 +196,14 @@ export default function Sold() {
 
       {modal === 'add' && (
         <Modal title="Record Sale" onClose={() => setModal(null)}>
-          <SaleForm items={items} onSubmit={handleAdd} onClose={() => setModal(null)} />
+          <SaleForm items={availableItems} onSubmit={handleAdd} onClose={() => setModal(null)} />
         </Modal>
       )}
       {modal && modal !== 'add' && (
         <Modal title="Edit Sale" onClose={() => setModal(null)}>
           <SaleForm
             initial={{ item_id: modal.item_id, sale_price: modal.sale_price, platform_fees: modal.platform_fees, shipping_cost: modal.shipping_cost, sold_date: modal.sold_date }}
-            items={items}
+            items={availableItems}
             onSubmit={handleEdit}
             onClose={() => setModal(null)}
           />
