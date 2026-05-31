@@ -10,8 +10,8 @@ A self-hosted web app to track your eBay flipping business: inventory, listings,
 ## First-Time Setup
 
 ```bash
-git clone https://github.com/gfr-labs/fliptrack-self-hosted
-cd fliptrack-self-hosted
+git clone https://github.com/gfr-labs/FlipTrack
+cd FlipTrack
 docker compose up --build -d
 ```
 
@@ -32,6 +32,11 @@ From inside the repo folder on your server:
 ```
 
 That's it — your `./data/` folder is a volume mount and is never touched by the update.
+
+> **If you cloned before the repo was renamed**, update your remote once:
+> ```bash
+> git remote set-url origin https://github.com/gfr-labs/FlipTrack
+> ```
 
 ## Releases
 
