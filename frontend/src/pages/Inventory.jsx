@@ -6,13 +6,27 @@ import StatusBadge from '../components/StatusBadge'
 import ReceiptModal from '../components/ReceiptModal'
 
 const STATUSES = ['In Stock', 'Listed', 'Sold']
+const PLATFORMS = ['eBay', 'Facebook Marketplace', 'Craigslist', 'OfferUp', 'Amazon', 'Other']
 const today = () => new Date().toISOString().slice(0, 10)
+const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n ?? 0)
+const fmtDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
 function ItemForm({ initial, onSubmit, onClose }) {
-  const [form, setForm] = useState(
-    initial ?? { name: '', purchase_price: '', quantity: 1, status: 'In Stock', date_acquired: today(), notes: '' }
-  )
+  const isEdit = !!initial
+  const [form, setForm] = useState({
+    name: '', purchase_price: '', quantity: 1, status: 'In Stock',
+    date_acquired: today(), notes: '',
+    // listing extras
+    asking_price: '', platform: 'eBay', listed_date: today(),
+    // sale extras
+    sale_price: '', platform_fees: '0', shipping_cost: '0', sold_date: today(),
+    ...initial,
+  })
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  const net = form.status === 'Sold' && form.sale_price !== ''
+    ? (parseFloat(form.sale_price) || 0) - (parseFloat(form.platform_fees) || 0) - (parseFloat(form.shipping_cost) || 0) - (parseFloat(form.purchase_price) || 0)
+    : null
 
   const handle = (e) => {
     e.preventDefault()
@@ -51,6 +65,60 @@ function ItemForm({ initial, onSubmit, onClose }) {
         <label className="label block mb-1">Notes</label>
         <textarea className="input resize-none" rows={2} value={form.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Optional notes..." />
       </div>
+
+      {/* Listing fields */}
+      {form.status === 'Listed' && (
+        <div className="border-t border-[#1f1f1f] pt-3 space-y-2">
+          <p className="text-xs text-blue-400 font-medium uppercase tracking-wider">Listing Details</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label block mb-1">Asking Price</label>
+              <input className="input" type="number" step="0.01" min="0" required={!isEdit} value={form.asking_price} onChange={(e) => set('asking_price', e.target.value)} placeholder="0.00" />
+            </div>
+            <div>
+              <label className="label block mb-1">Platform</label>
+              <select className="input" value={form.platform} onChange={(e) => set('platform', e.target.value)}>
+                {PLATFORMS.map((p) => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="label block mb-1">Listed Date</label>
+            <input className="input" type="date" value={form.listed_date} onChange={(e) => set('listed_date', e.target.value)} />
+          </div>
+        </div>
+      )}
+
+      {/* Sale fields */}
+      {form.status === 'Sold' && (
+        <div className="border-t border-[#1f1f1f] pt-3 space-y-2">
+          <p className="text-xs text-green-400 font-medium uppercase tracking-wider">Sale Details</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label block mb-1">Sale Price</label>
+              <input className="input" type="number" step="0.01" min="0" required={!isEdit} value={form.sale_price} onChange={(e) => set('sale_price', e.target.value)} placeholder="0.00" />
+            </div>
+            <div>
+              <label className="label block mb-1">Platform Fees</label>
+              <input className="input" type="number" step="0.01" min="0" value={form.platform_fees} onChange={(e) => set('platform_fees', e.target.value)} placeholder="0.00" />
+            </div>
+            <div>
+              <label className="label block mb-1">Shipping Cost</label>
+              <input className="input" type="number" step="0.01" min="0" value={form.shipping_cost} onChange={(e) => set('shipping_cost', e.target.value)} placeholder="0.00" />
+            </div>
+            <div>
+              <label className="label block mb-1">Sold Date</label>
+              <input className="input" type="date" value={form.sold_date} onChange={(e) => set('sold_date', e.target.value)} />
+            </div>
+          </div>
+          {net !== null && (
+            <div className={`rounded-xl border px-4 py-3 text-sm font-mono font-medium ${net >= 0 ? 'bg-green-950/30 border-green-800/30 text-green-400' : 'bg-red-950/30 border-red-800/30 text-red-400'}`}>
+              Estimated Net Profit: {fmt(net)}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex gap-2 pt-1">
         <button type="submit" className="btn-primary flex-1 justify-center">Save Item</button>
         <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
@@ -58,9 +126,6 @@ function ItemForm({ initial, onSubmit, onClose }) {
     </form>
   )
 }
-
-const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n ?? 0)
-const fmtDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
 export default function Inventory() {
   const [items, setItems] = useState([])
@@ -94,13 +159,26 @@ export default function Inventory() {
   const listed = activeItems.filter((i) => i.status === 'Listed').length
 
   const handleAdd = async (data) => {
-    await api.createItem(data)
+    const { asking_price, platform, listed_date, sale_price, platform_fees, shipping_cost, sold_date, ...itemData } = data
+    const item = await api.createItem(itemData)
+    if (itemData.status === 'Listed' && asking_price) {
+      await api.createListing({ item_id: item.id, platform: platform || 'eBay', asking_price: parseFloat(asking_price), listed_date: listed_date || today(), url: '' })
+    } else if (itemData.status === 'Sold' && sale_price) {
+      await api.createSale({ item_id: item.id, sale_price: parseFloat(sale_price), platform_fees: parseFloat(platform_fees) || 0, shipping_cost: parseFloat(shipping_cost) || 0, sold_date: sold_date || today() })
+    }
     setModal(null)
     load()
   }
 
   const handleEdit = async (data) => {
-    await api.updateItem(modal.id, data)
+    const { asking_price, platform, listed_date, sale_price, platform_fees, shipping_cost, sold_date, ...itemData } = data
+    await api.updateItem(modal.id, itemData)
+    const prevStatus = modal.status
+    if (itemData.status === 'Listed' && prevStatus !== 'Listed' && asking_price) {
+      await api.createListing({ item_id: modal.id, platform: platform || 'eBay', asking_price: parseFloat(asking_price), listed_date: listed_date || today(), url: '' })
+    } else if (itemData.status === 'Sold' && prevStatus !== 'Sold' && sale_price) {
+      await api.createSale({ item_id: modal.id, sale_price: parseFloat(sale_price), platform_fees: parseFloat(platform_fees) || 0, shipping_cost: parseFloat(shipping_cost) || 0, sold_date: sold_date || today() })
+    }
     setModal(null)
     load()
   }
