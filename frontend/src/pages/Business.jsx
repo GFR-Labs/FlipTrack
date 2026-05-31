@@ -32,7 +32,7 @@ export default function Business() {
   }
 
   const handleExport = () => {
-    window.location.href = api.exportCsv(start, end)
+    window.location.href = api.exportZip(start, end)
   }
 
   return (
@@ -81,7 +81,7 @@ export default function Business() {
           </button>
           <button onClick={handleExport} className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#222] border border-[#2a2a2a] hover:border-green-700 text-gray-300 hover:text-white font-medium px-4 py-2 rounded-xl transition-colors">
             <Download className="w-4 h-4" />
-            Export CSV
+            Download Report (.xlsx + receipts)
           </button>
         </div>
 
@@ -131,7 +131,7 @@ export default function Business() {
           <div className="flex justify-end">
             <button onClick={handleExport} className="flex items-center gap-2 btn-primary">
               <Download className="w-4 h-4" />
-              Download CSV for CPA
+              Download Report (.xlsx + receipts)
             </button>
           </div>
         </div>

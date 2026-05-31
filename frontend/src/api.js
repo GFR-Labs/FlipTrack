@@ -46,5 +46,5 @@ export const api = {
 
   // Business
   businessSummary: (start, end) => req('GET', `/business/summary?start=${start}&end=${end}`),
-  exportCsv: (start, end) => `/api/business/export/csv?start=${start}&end=${end}`,
+  exportZip: (start, end) => `/api/business/export/zip?start=${start}&end=${end}`,
 }
