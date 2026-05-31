@@ -18,16 +18,18 @@ from models import Expense, Item, Receipt, Sale
 RECEIPTS_DIR = Path("/data/receipts")
 router = APIRouter(prefix="/api/business", tags=["business"])
 
-# ── Palette ──────────────────────────────────────────────────────────────────
-BG_HEADER   = "1F3864"
-BG_SECTION  = "2F75B6"
-BG_ALT      = "F2F7FC"
-BG_TOTAL    = "DEEAF1"
-FG_WHITE    = "FFFFFF"
-FG_DARK     = "1A1A2E"
-FG_GREEN    = "375623"
-FG_RED      = "C00000"
-FG_SECTION  = "2F75B6"
+# ── Palette (8-char ARGB — openpyxl requires FF alpha prefix) ────────────────
+BG_HEADER   = "FF1F3864"
+BG_SECTION  = "FF2F75B6"
+BG_ALT      = "FFF2F7FC"
+BG_TOTAL    = "FFDEEAF1"
+BG_WHITE    = "FFFFFFFF"
+BG_CAT      = "FFEBF3FB"
+FG_WHITE    = "FFFFFFFF"
+FG_DARK     = "FF1A1A2E"
+FG_GREEN    = "FF375623"
+FG_RED      = "FFC00000"
+FG_SECTION  = "FF2F75B6"  # same blue as BG_SECTION — used as font colour on light bg
 
 
 # ── Style helpers ─────────────────────────────────────────────────────────────
@@ -39,7 +41,7 @@ def _font(bold=False, color=FG_DARK, size=11) -> Font:
     return Font(bold=bold, color=color, size=size, name="Calibri")
 
 def _thin_border() -> Border:
-    s = Side(style="thin", color="D9D9D9")
+    s = Side(style="thin", color="FFD9D9D9")
     return Border(left=s, right=s, top=s, bottom=s)
 
 def _set_widths(ws, widths: list[float]):
@@ -55,15 +57,21 @@ def _header_row(ws, row: int, headers: list[str]):
         c.border = _thin_border()
     ws.row_dimensions[row].height = 22
 
-def _money(ws, row: int, col: int, value: float, bold=False, color=FG_DARK):
+def _money(ws, row: int, col: int, value: float, bold=False, color=FG_DARK, bg=BG_WHITE):
     c = ws.cell(row=row, column=col, value=value)
     c.number_format = '$#,##0.00'
-    c.font  = _font(bold=bold, color=color)
+    c.font   = _font(bold=bold, color=color)
+    c.fill   = _fill(bg)
     c.border = _thin_border()
     return c
 
 def _safe(s: str) -> str:
-    return re.sub(r'[^\w\-]', '-', str(s))[:28].strip('-')
+    return re.sub(r'[^\w\-]', '-', str(s))[:28].strip('-') or "untitled"
+
+def _profit_color(value: float) -> str:
+    if value > 0:  return FG_GREEN
+    if value < 0:  return FG_RED
+    return FG_DARK
 
 
 # ── Sheet builders ────────────────────────────────────────────────────────────
@@ -97,7 +105,7 @@ def _summary_sheet(ws, start: date, end: date, sales, expenses):
     net_inc = net_s - exp_tot
 
     def metric_row(r, label, value, is_total=False):
-        bg = BG_TOTAL if is_total else "FFFFFF"
+        bg = BG_TOTAL if is_total else BG_WHITE
         lc = ws.cell(row=r, column=2, value=label)
         lc.font  = _font(bold=is_total, color=FG_DARK)
         lc.fill  = _fill(bg)
@@ -105,8 +113,7 @@ def _summary_sheet(ws, start: date, end: date, sales, expenses):
         lc.border = _thin_border()
         vc = ws.cell(row=r, column=3, value=value)
         vc.number_format = '$#,##0.00'
-        color = (FG_GREEN if value >= 0 else FG_RED) if value is not None else FG_DARK
-        vc.font  = _font(bold=is_total, color=color)
+        vc.font  = _font(bold=is_total, color=_profit_color(value) if value is not None else FG_DARK)
         vc.fill  = _fill(bg)
         vc.border = _thin_border()
         ws.row_dimensions[r].height = 18
@@ -152,26 +159,26 @@ def _sales_sheet(ws, sales, items_map: dict, receipts_map: dict):
     _header_row(ws, 1, headers)
 
     for i, sale in enumerate(sorted(sales, key=lambda s: s.sold_date)):
-        r   = i + 2
-        bg  = BG_ALT if i % 2 else "FFFFFF"
+        r    = i + 2
+        bg   = BG_ALT if i % 2 else BG_WHITE
         item = items_map.get(sale.item_id)
         cost = item.purchase_price if item else 0.0
         receipts = ", ".join(receipts_map.get(("item", sale.item_id), []))
 
-        def cell(col, val):
-            c = ws.cell(row=r, column=col, value=val)
-            c.fill   = _fill(bg)
+        def cell(col, val, _r=r, _bg=bg):
+            c = ws.cell(row=_r, column=col, value=val)
+            c.fill   = _fill(_bg)
             c.border = _thin_border()
             return c
 
         c1 = cell(1, sale.sold_date); c1.number_format = "MMM DD, YYYY"; c1.alignment = Alignment(horizontal="center")
         cell(2, item.name if item else "Unknown").font = _font(color=FG_DARK)
-        _money(ws, r, 3, sale.sale_price,    color=FG_DARK)
-        _money(ws, r, 4, sale.platform_fees, color=FG_DARK)
-        _money(ws, r, 5, sale.shipping_cost, color=FG_DARK)
-        _money(ws, r, 6, cost,               color=FG_DARK)
-        _money(ws, r, 7, sale.net_profit,    color=FG_GREEN if sale.net_profit >= 0 else FG_RED)
-        cell(8, receipts).font = _font(color="666666", size=9)
+        _money(ws, r, 3, sale.sale_price,    color=FG_DARK, bg=bg)
+        _money(ws, r, 4, sale.platform_fees, color=FG_DARK, bg=bg)
+        _money(ws, r, 5, sale.shipping_cost, color=FG_DARK, bg=bg)
+        _money(ws, r, 6, cost,               color=FG_DARK, bg=bg)
+        _money(ws, r, 7, sale.net_profit,    color=_profit_color(sale.net_profit), bg=bg)
+        cell(8, receipts).font = _font(color="FF666666", size=9)
 
     # Totals
     tr = len(sales) + 2
@@ -187,14 +194,17 @@ def _sales_sheet(ws, sales, items_map: dict, receipts_map: dict):
     total_cell(2, "TOTALS")
     for col, attr in [(3, "sale_price"), (4, "platform_fees"), (5, "shipping_cost")]:
         total_cell(col, sum(getattr(s, attr) for s in sales), '$#,##0.00')
-    total_cell(6, sum(items_map[s.item_id].purchase_price for s in sales if s.item_id in items_map), '$#,##0.00')
-    c = total_cell(7, sum(s.net_profit for s in sales), '$#,##0.00')
-    c.font = _font(bold=True, color=FG_GREEN if c.value >= 0 else FG_RED)
+    # Include orphaned sales as $0.00 cost (consistent with per-row display)
+    total_cell(6, sum(items_map[s.item_id].purchase_price if s.item_id in items_map else 0.0 for s in sales), '$#,##0.00')
+    net_total = sum(s.net_profit for s in sales)
+    c = total_cell(7, net_total, '$#,##0.00')
+    c.font = _font(bold=True, color=_profit_color(net_total))
     total_cell(8, "")
 
     _set_widths(ws, widths)
     ws.freeze_panes = "A2"
-    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}1"
+    # Cover header + all data rows (exclude totals row from filter domain)
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{tr - 1}"
 
 
 def _expenses_sheet(ws, expenses, receipts_map: dict):
@@ -216,7 +226,7 @@ def _expenses_sheet(ws, expenses, receipts_map: dict):
         # Category subheader stripe
         for col in range(1, 6):
             c = ws.cell(row=row, column=col)
-            c.fill   = _fill("EBF3FB")
+            c.fill   = _fill(BG_CAT)
             c.border = _thin_border()
         ws.cell(row=row, column=1).value = ""
         ws.cell(row=row, column=2, value=cat).font = _font(bold=True, color=FG_SECTION, size=10)
@@ -224,28 +234,30 @@ def _expenses_sheet(ws, expenses, receipts_map: dict):
         sc  = ws.cell(row=row, column=4, value=sub)
         sc.number_format = '$#,##0.00'
         sc.font   = _font(bold=True, color=FG_RED)
-        sc.fill   = _fill("EBF3FB")
+        sc.fill   = _fill(BG_CAT)
         sc.border = _thin_border()
         ws.row_dimensions[row].height = 16
         row += 1
 
         for i, exp in enumerate(by_cat[cat]):
-            bg = BG_ALT if i % 2 else "FFFFFF"
+            bg       = BG_ALT if i % 2 else BG_WHITE
             receipts = ", ".join(receipts_map.get(("expense", exp.id), []))
 
-            def ecell(col, val):
-                c = ws.cell(row=row, column=col, value=val)
-                c.fill   = _fill(bg)
+            def ecell(col, val, _r=row, _bg=bg):
+                c = ws.cell(row=_r, column=col, value=val)
+                c.fill   = _fill(_bg)
                 c.border = _thin_border()
                 return c
 
             dc = ecell(1, exp.date); dc.number_format = "MMM DD, YYYY"; dc.alignment = Alignment(horizontal="center")
             ecell(2, exp.category).font  = _font(color=FG_DARK)
-            ecell(3, exp.description or "").font = _font(color="555555")
+            ecell(3, exp.description or "").font = _font(color="FF555555")
             ac = ecell(4, exp.amount); ac.number_format = '$#,##0.00'; ac.font = _font(color=FG_RED)
-            ecell(5, receipts).font = _font(color="666666", size=9)
+            ecell(5, receipts).font = _font(color="FF666666", size=9)
             total += exp.amount
             row += 1
+
+    last_data_row = row - 1
 
     # Grand total
     for col in range(1, 6):
@@ -261,7 +273,8 @@ def _expenses_sheet(ws, expenses, receipts_map: dict):
 
     _set_widths(ws, widths)
     ws.freeze_panes = "A2"
-    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}1"
+    # Cover header + all data rows (exclude grand total row from filter domain)
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{last_data_row}"
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -274,10 +287,16 @@ def export_zip(
 ):
     sales    = session.exec(select(Sale).where(Sale.sold_date >= start, Sale.sold_date <= end)).all()
     expenses = session.exec(select(Expense).where(Expense.date >= start, Expense.date <= end)).all()
-    items_map = {i.id: i for i in session.exec(select(Item)).all()}
 
-    item_ids    = list({s.item_id for s in sales})
-    expense_ids = [e.id for e in expenses]
+    # Scope items_map to only the items referenced by the filtered sales
+    item_ids  = list({s.item_id for s in sales})
+    items_map = (
+        {i.id: i for i in session.exec(select(Item).where(Item.id.in_(item_ids))).all()}
+        if item_ids else {}
+    )
+
+    expense_ids    = [e.id for e in expenses]
+    expenses_by_id = {e.id: e for e in expenses}
 
     raw_receipts: list[Receipt] = []
     if item_ids:
@@ -298,10 +317,10 @@ def export_zip(
         if not disk.exists():
             continue
         if r.entity_type == "item":
-            item = items_map.get(r.entity_id)
+            item  = items_map.get(r.entity_id)
             label = _safe(item.name) if item else "item"
         else:
-            exp = next((e for e in expenses if e.id == r.entity_id), None)
+            exp   = expenses_by_id.get(r.entity_id)
             label = _safe(exp.description or exp.category) if exp else "expense"
         ext      = Path(r.filename).suffix
         zip_name = f"receipts/{r.entity_type}_{r.entity_id}_{label}_{r.id}{ext}"
@@ -309,10 +328,10 @@ def export_zip(
         disk_files.append((disk, zip_name))
 
     # Build XLSX
-    wb   = Workbook()
-    ws1  = wb.active
-    ws2  = wb.create_sheet()
-    ws3  = wb.create_sheet()
+    wb  = Workbook()
+    ws1 = wb.active
+    ws2 = wb.create_sheet()
+    ws3 = wb.create_sheet()
     _summary_sheet(ws1, start, end, sales, expenses)
     _sales_sheet(ws2, sales, items_map, receipts_map)
     _expenses_sheet(ws3, expenses, receipts_map)
@@ -328,7 +347,6 @@ def export_zip(
         for disk_path, zip_path in disk_files:
             zf.write(disk_path, zip_path)
 
-    zip_buf.seek(0)
     fname = f"fliptrack_cpa_{start}_{end}.zip"
     return StreamingResponse(
         iter([zip_buf.getvalue()]),
