@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, ExternalLink } from 'lucide-react'
+import { Plus, Pencil, Trash2, ExternalLink, DollarSign } from 'lucide-react'
 import { api } from '../api'
 import Modal from '../components/Modal'
 
@@ -7,6 +7,64 @@ const PLATFORMS = ['eBay', 'Facebook Marketplace', 'Craigslist', 'OfferUp', 'Ama
 const today = () => new Date().toISOString().slice(0, 10)
 const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n ?? 0)
 const fmtDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+function QuickSellForm({ item, onSubmit, onClose }) {
+  const [form, setForm] = useState({ sale_price: '', platform_fees: '0', shipping_cost: '0', sold_date: today() })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const net = form.sale_price !== ''
+    ? (parseFloat(form.sale_price) || 0) - (parseFloat(form.platform_fees) || 0) - (parseFloat(form.shipping_cost) || 0) - item.purchase_price
+    : null
+
+  const handle = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    try {
+      await onSubmit({ item_id: item.id, sale_price: parseFloat(form.sale_price), platform_fees: parseFloat(form.platform_fees) || 0, shipping_cost: parseFloat(form.shipping_cost) || 0, sold_date: form.sold_date })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handle} className="space-y-3">
+      <p className="text-sm text-gray-400">Recording sale for <span className="text-white font-medium">{item.name}</span> <span className="text-gray-600 font-mono">(cost: {fmt(item.purchase_price)})</span></p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label block mb-1">Sale Price</label>
+          <input className="input" type="number" step="0.01" min="0" required value={form.sale_price} onChange={e => set('sale_price', e.target.value)} placeholder="0.00" />
+        </div>
+        <div>
+          <label className="label block mb-1">Platform Fees</label>
+          <input className="input" type="number" step="0.01" min="0" value={form.platform_fees} onChange={e => set('platform_fees', e.target.value)} placeholder="0.00" />
+        </div>
+        <div>
+          <label className="label block mb-1">Shipping Cost</label>
+          <input className="input" type="number" step="0.01" min="0" value={form.shipping_cost} onChange={e => set('shipping_cost', e.target.value)} placeholder="0.00" />
+        </div>
+        <div>
+          <label className="label block mb-1">Sold Date</label>
+          <input className="input" type="date" value={form.sold_date} onChange={e => set('sold_date', e.target.value)} />
+        </div>
+      </div>
+      {net !== null && (
+        <div className={`rounded-xl border px-4 py-3 text-sm font-mono font-medium ${net >= 0 ? 'bg-green-950/30 border-green-800/30 text-green-400' : 'bg-red-950/30 border-red-800/30 text-red-400'}`}>
+          Net Profit: {fmt(net)}
+        </div>
+      )}
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+      <div className="flex gap-2 pt-1">
+        <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Recording…' : 'Record Sale'}</button>
+        <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
+      </div>
+    </form>
+  )
+}
 
 function ListingForm({ initial, items, onSubmit, onClose }) {
   const [form, setForm] = useState(
@@ -56,6 +114,7 @@ export default function Listings() {
   const [items, setItems] = useState([])
   const [modal, setModal] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [sellTarget, setSellTarget] = useState(null) // listing for quick-sell
 
   const load = () => {
     api.getListings().then(setListings).catch(console.error)
@@ -64,6 +123,8 @@ export default function Listings() {
   useEffect(() => { load() }, [])
 
   const availableItems = items.filter((i) => i.status !== 'Sold')
+  // Hide listings whose item has since been sold
+  const activeListings = listings.filter(l => !l.item || l.item.status !== 'Sold')
 
   const handleAdd = async (data) => {
     await api.createListing(data)
@@ -83,7 +144,7 @@ export default function Listings() {
     load()
   }
 
-  const totalAskingValue = listings.reduce((s, l) => s + l.asking_price, 0)
+  const totalAskingValue = activeListings.reduce((s, l) => s + l.asking_price, 0)
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
@@ -95,7 +156,7 @@ export default function Listings() {
       <div className="grid grid-cols-2 gap-3">
         <div className="card px-4 py-3">
           <div className="text-xs text-gray-500 mb-1">Active Listings</div>
-          <div className="text-xl font-bold text-white font-mono">{listings.length}</div>
+          <div className="text-xl font-bold text-white font-mono">{activeListings.length}</div>
         </div>
         <div className="card px-4 py-3">
           <div className="text-xs text-gray-500 mb-1">Total Asking Value</div>
@@ -122,12 +183,12 @@ export default function Listings() {
               </tr>
             </thead>
             <tbody>
-              {listings.length === 0 && (
+              {activeListings.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-10 text-center text-gray-600">No listings yet</td>
                 </tr>
               )}
-              {listings.map((l) => (
+              {activeListings.map((l) => (
                 <tr key={l.id} className="border-b border-[#1a1a1a] hover:bg-[#161616] transition-colors">
                   <td className="px-4 py-3">
                     <div className="text-white font-medium">{l.item?.name ?? `Item #${l.item_id}`}</div>
@@ -140,15 +201,20 @@ export default function Listings() {
                   <td className="px-4 py-3 text-gray-400 hidden md:table-cell">{fmtDate(l.listed_date)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
+                      {l.item && (
+                        <button onClick={() => setSellTarget(l)} className="p-1.5 rounded-lg text-gray-500 hover:text-green-400 hover:bg-green-950/30 transition-colors" title="Record sale">
+                          <DollarSign className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {l.url && (
                         <a href={l.url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg text-gray-500 hover:text-blue-400 hover:bg-[#222] transition-colors">
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       )}
-                      <button onClick={() => setModal(l)} className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#222] transition-colors">
+                      <button onClick={() => setModal(l)} className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#222] transition-colors" title="Edit">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => setConfirmDelete(l)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-950/30 transition-colors">
+                      <button onClick={() => setConfirmDelete(l)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-950/30 transition-colors" title="Delete">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -182,6 +248,21 @@ export default function Listings() {
             <button onClick={() => handleDelete(confirmDelete.id)} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-medium py-2 rounded-xl transition-colors">Delete</button>
             <button onClick={() => setConfirmDelete(null)} className="btn-ghost flex-1 text-center">Cancel</button>
           </div>
+        </Modal>
+      )}
+
+      {sellTarget && (
+        <Modal title="Record Sale" onClose={() => setSellTarget(null)}>
+          <QuickSellForm
+            item={sellTarget.item}
+            onSubmit={async (data) => {
+              await api.createSale(data)
+              await api.deleteListing(sellTarget.id)
+              setSellTarget(null)
+              load()
+            }}
+            onClose={() => setSellTarget(null)}
+          />
         </Modal>
       )}
     </div>

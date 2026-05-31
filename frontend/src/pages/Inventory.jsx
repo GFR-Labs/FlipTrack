@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Search, Pencil, Trash2, Paperclip } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Paperclip, Tag, DollarSign } from 'lucide-react'
 import { api } from '../api'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
@@ -10,6 +10,115 @@ const PLATFORMS = ['eBay', 'Facebook Marketplace', 'Craigslist', 'OfferUp', 'Ama
 const today = () => new Date().toISOString().slice(0, 10)
 const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n ?? 0)
 const fmtDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+function QuickListForm({ item, onSubmit, onClose }) {
+  const [form, setForm] = useState({ platform: 'eBay', asking_price: '', listed_date: today(), url: '' })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handle = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    try {
+      await onSubmit({ item_id: item.id, platform: form.platform, asking_price: parseFloat(form.asking_price), listed_date: form.listed_date, url: form.url })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handle} className="space-y-3">
+      <p className="text-sm text-gray-400">Listing <span className="text-white font-medium">{item.name}</span></p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label block mb-1">Asking Price</label>
+          <input className="input" type="number" step="0.01" min="0" required value={form.asking_price} onChange={e => set('asking_price', e.target.value)} placeholder="0.00" />
+        </div>
+        <div>
+          <label className="label block mb-1">Platform</label>
+          <select className="input" value={form.platform} onChange={e => set('platform', e.target.value)}>
+            {PLATFORMS.map(p => <option key={p}>{p}</option>)}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="label block mb-1">Listed Date</label>
+        <input className="input" type="date" value={form.listed_date} onChange={e => set('listed_date', e.target.value)} />
+      </div>
+      <div>
+        <label className="label block mb-1">URL (optional)</label>
+        <input className="input" type="url" value={form.url} onChange={e => set('url', e.target.value)} placeholder="https://..." />
+      </div>
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+      <div className="flex gap-2 pt-1">
+        <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Listing…' : 'Create Listing'}</button>
+        <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
+      </div>
+    </form>
+  )
+}
+
+function QuickSellForm({ item, onSubmit, onClose }) {
+  const [form, setForm] = useState({ sale_price: '', platform_fees: '0', shipping_cost: '0', sold_date: today() })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const net = form.sale_price !== ''
+    ? (parseFloat(form.sale_price) || 0) - (parseFloat(form.platform_fees) || 0) - (parseFloat(form.shipping_cost) || 0) - item.purchase_price
+    : null
+
+  const handle = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    try {
+      await onSubmit({ item_id: item.id, sale_price: parseFloat(form.sale_price), platform_fees: parseFloat(form.platform_fees) || 0, shipping_cost: parseFloat(form.shipping_cost) || 0, sold_date: form.sold_date })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handle} className="space-y-3">
+      <p className="text-sm text-gray-400">Recording sale for <span className="text-white font-medium">{item.name}</span> <span className="text-gray-600 font-mono">(cost: {fmt(item.purchase_price)})</span></p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label block mb-1">Sale Price</label>
+          <input className="input" type="number" step="0.01" min="0" required value={form.sale_price} onChange={e => set('sale_price', e.target.value)} placeholder="0.00" />
+        </div>
+        <div>
+          <label className="label block mb-1">Platform Fees</label>
+          <input className="input" type="number" step="0.01" min="0" value={form.platform_fees} onChange={e => set('platform_fees', e.target.value)} placeholder="0.00" />
+        </div>
+        <div>
+          <label className="label block mb-1">Shipping Cost</label>
+          <input className="input" type="number" step="0.01" min="0" value={form.shipping_cost} onChange={e => set('shipping_cost', e.target.value)} placeholder="0.00" />
+        </div>
+        <div>
+          <label className="label block mb-1">Sold Date</label>
+          <input className="input" type="date" value={form.sold_date} onChange={e => set('sold_date', e.target.value)} />
+        </div>
+      </div>
+      {net !== null && (
+        <div className={`rounded-xl border px-4 py-3 text-sm font-mono font-medium ${net >= 0 ? 'bg-green-950/30 border-green-800/30 text-green-400' : 'bg-red-950/30 border-red-800/30 text-red-400'}`}>
+          Net Profit: {fmt(net)}
+        </div>
+      )}
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+      <div className="flex gap-2 pt-1">
+        <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Recording…' : 'Record Sale'}</button>
+        <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
+      </div>
+    </form>
+  )
+}
 
 function ItemForm({ initial, onSubmit, onClose }) {
   const isEdit = !!initial
@@ -133,6 +242,8 @@ export default function Inventory() {
   const [modal, setModal] = useState(null) // null | 'add' | {item}
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [receiptTarget, setReceiptTarget] = useState(null) // {id, name}
+  const [listTarget, setListTarget] = useState(null) // item for quick-list
+  const [sellTarget, setSellTarget] = useState(null) // item for quick-sell
 
   const load = () => api.getItems().then(setItems).catch(console.error)
   useEffect(() => {
@@ -260,6 +371,22 @@ export default function Inventory() {
                   <td className="px-4 py-3 text-gray-400 hidden md:table-cell">{fmtDate(item.date_acquired)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
+                      {item.status !== 'Listed' && (
+                        <button
+                          onClick={() => setListTarget(item)}
+                          className="p-1.5 rounded-lg text-gray-500 hover:text-blue-400 hover:bg-blue-950/30 transition-colors"
+                          title="List this item"
+                        >
+                          <Tag className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setSellTarget(item)}
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-green-400 hover:bg-green-950/30 transition-colors"
+                        title="Record sale"
+                      >
+                        <DollarSign className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         onClick={() => setReceiptTarget({ id: item.id, name: item.name })}
                         className="p-1.5 rounded-lg text-gray-500 hover:text-yellow-400 hover:bg-yellow-950/30 transition-colors"
@@ -270,12 +397,14 @@ export default function Inventory() {
                       <button
                         onClick={() => setModal(item)}
                         className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#222] transition-colors"
+                        title="Edit"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setConfirmDelete(item)}
                         className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-950/30 transition-colors"
+                        title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -309,6 +438,26 @@ export default function Inventory() {
             }}
             onSubmit={handleEdit}
             onClose={() => setModal(null)}
+          />
+        </Modal>
+      )}
+
+      {listTarget && (
+        <Modal title="List Item" onClose={() => setListTarget(null)}>
+          <QuickListForm
+            item={listTarget}
+            onSubmit={async (data) => { await api.createListing(data); setListTarget(null); load() }}
+            onClose={() => setListTarget(null)}
+          />
+        </Modal>
+      )}
+
+      {sellTarget && (
+        <Modal title="Record Sale" onClose={() => setSellTarget(null)}>
+          <QuickSellForm
+            item={sellTarget}
+            onSubmit={async (data) => { await api.createSale(data); setSellTarget(null); load() }}
+            onClose={() => setSellTarget(null)}
           />
         </Modal>
       )}
