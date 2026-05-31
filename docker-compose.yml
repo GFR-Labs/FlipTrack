@@ -1,0 +1,10 @@
+services:
+  fliptrack:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - DATABASE_URL=sqlite:////data/fliptrack.db
+    restart: unless-stopped
