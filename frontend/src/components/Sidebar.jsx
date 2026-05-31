@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, Package, Tag, DollarSign, Receipt, BarChart3, TrendingUp, X, PlusSquare
+  LayoutDashboard, Package, Tag, DollarSign, Receipt, BarChart3, TrendingUp, X, PlusSquare, HardDrive
 } from 'lucide-react'
 
 const NAV = [
@@ -12,6 +13,36 @@ const NAV = [
   { to: '/business', label: 'Business', icon: BarChart3 },
   { to: '/bulk-add', label: 'Bulk Add', icon: PlusSquare },
 ]
+
+function StorageIndicator() {
+  const [info, setInfo] = useState(null)
+
+  useEffect(() => {
+    const fetch_ = () =>
+      fetch('/api/system/storage')
+        .then((r) => r.json())
+        .then(setInfo)
+        .catch(() => {})
+    fetch_()
+    const t = setInterval(fetch_, 60_000)
+    return () => clearInterval(t)
+  }, [])
+
+  if (!info) return null
+
+  const gb = info.bytes / (1024 ** 3)
+  const color =
+    gb > 5 ? 'text-red-400' :
+    gb > 1 ? 'text-yellow-400' :
+    'text-gray-600'
+
+  return (
+    <div className="px-4 py-3 border-t border-[#1f1f1f] flex items-center gap-2">
+      <HardDrive className={`w-3.5 h-3.5 flex-shrink-0 ${color}`} />
+      <span className={`text-xs ${color}`}>{info.human} used</span>
+    </div>
+  )
+}
 
 export default function Sidebar({ open, onClose }) {
   return (
@@ -70,6 +101,9 @@ export default function Sidebar({ open, onClose }) {
             </NavLink>
           ))}
         </nav>
+
+        {/* Storage indicator */}
+        <StorageIndicator />
       </aside>
     </>
   )

@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import init_db
-from routers import inventory, listings, sold, expenses, dashboard, business, bulk_add
+from routers import inventory, listings, sold, expenses, dashboard, business, bulk_add, receipts, system
 
 app = FastAPI(title="FlipTrack API", version="1.0.0")
 
@@ -14,6 +14,8 @@ app.include_router(expenses.router)
 app.include_router(dashboard.router)
 app.include_router(business.router)
 app.include_router(bulk_add.router)
+app.include_router(receipts.router)
+app.include_router(system.router)
 
 
 @app.on_event("startup")

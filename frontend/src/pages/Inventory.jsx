@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Paperclip } from 'lucide-react'
 import { api } from '../api'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
+import ReceiptModal from '../components/ReceiptModal'
 
 const STATUSES = ['In Stock', 'Listed', 'Sold']
 const today = () => new Date().toISOString().slice(0, 10)
@@ -66,6 +67,7 @@ export default function Inventory() {
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState(null) // null | 'add' | {item}
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [receiptTarget, setReceiptTarget] = useState(null) // {id, name}
 
   const load = () => api.getItems().then(setItems).catch(console.error)
   useEffect(() => { load() }, [])
@@ -170,6 +172,13 @@ export default function Inventory() {
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
+                        onClick={() => setReceiptTarget({ id: item.id, name: item.name })}
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-yellow-400 hover:bg-yellow-950/30 transition-colors"
+                        title="Receipts"
+                      >
+                        <Paperclip className="w-3.5 h-3.5" />
+                      </button>
+                      <button
                         onClick={() => setModal(item)}
                         className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#222] transition-colors"
                       >
@@ -213,6 +222,15 @@ export default function Inventory() {
             onClose={() => setModal(null)}
           />
         </Modal>
+      )}
+
+      {receiptTarget && (
+        <ReceiptModal
+          entityType="item"
+          entityId={receiptTarget.id}
+          entityName={receiptTarget.name}
+          onClose={() => setReceiptTarget(null)}
+        />
       )}
 
       {/* Delete confirm */}

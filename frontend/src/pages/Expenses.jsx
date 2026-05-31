@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Paperclip } from 'lucide-react'
 import { api } from '../api'
 import Modal from '../components/Modal'
+import ReceiptModal from '../components/ReceiptModal'
 
 const CATEGORIES = [
   'Shipping Supplies', 'eBay Fees', 'PayPal Fees', 'Mileage', 'Storage',
@@ -49,6 +50,7 @@ export default function Expenses() {
   const [expenses, setExpenses] = useState([])
   const [modal, setModal] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [receiptTarget, setReceiptTarget] = useState(null)
 
   const load = () => api.getExpenses().then(setExpenses).catch(console.error)
   useEffect(() => { load() }, [])
@@ -135,6 +137,13 @@ export default function Expenses() {
                   <td className="px-4 py-3 text-gray-400 hidden sm:table-cell">{fmtDate(e.date)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => setReceiptTarget({ id: e.id, name: e.description || e.category })}
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-yellow-400 hover:bg-yellow-950/30 transition-colors"
+                        title="Receipts"
+                      >
+                        <Paperclip className="w-3.5 h-3.5" />
+                      </button>
                       <button onClick={() => setModal(e)} className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#222] transition-colors">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -149,6 +158,15 @@ export default function Expenses() {
           </table>
         </div>
       </div>
+
+      {receiptTarget && (
+        <ReceiptModal
+          entityType="expense"
+          entityId={receiptTarget.id}
+          entityName={receiptTarget.name}
+          onClose={() => setReceiptTarget(null)}
+        />
+      )}
 
       {modal === 'add' && (
         <Modal title="Add Expense" onClose={() => setModal(null)}>
