@@ -70,13 +70,15 @@ export default function Inventory() {
   const load = () => api.getItems().then(setItems).catch(console.error)
   useEffect(() => { load() }, [])
 
-  const filtered = items.filter((i) =>
+  // Sold items live only in the Sold tab — inventory shows active items only
+  const activeItems = items.filter((i) => i.status !== 'Sold')
+  const filtered = activeItems.filter((i) =>
     i.name.toLowerCase().includes(search.toLowerCase())
   )
 
-  const totalInvested = items.reduce((s, i) => s + i.purchase_price * i.quantity, 0)
-  const inStock = items.filter((i) => i.status === 'In Stock').length
-  const listed = items.filter((i) => i.status === 'Listed').length
+  const totalInvested = activeItems.reduce((s, i) => s + i.purchase_price * i.quantity, 0)
+  const inStock = activeItems.filter((i) => i.status === 'In Stock').length
+  const listed = activeItems.filter((i) => i.status === 'Listed').length
 
   const handleAdd = async (data) => {
     await api.createItem(data)
@@ -106,7 +108,7 @@ export default function Inventory() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Total Items', value: items.length },
+          { label: 'Active Items', value: activeItems.length },
           { label: 'In Stock', value: inStock },
           { label: 'Listed', value: listed },
           { label: 'Total Invested', value: fmt(totalInvested) },
@@ -152,7 +154,7 @@ export default function Inventory() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-gray-600">
-                    {search ? 'No items match your search' : 'No items yet — add your first item'}
+                    {search ? 'No items match your search' : 'No active inventory — add your first item'}
                   </td>
                 </tr>
               )}

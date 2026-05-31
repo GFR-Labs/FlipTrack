@@ -81,8 +81,8 @@ export default function Dashboard() {
         />
         <StatCard
           label="Potential Profit"
-          value={fmt(stats?.potential_inventory_value)}
-          sub={`${stats?.items_listed ?? 0} active listings`}
+          value={fmt(stats?.potential_profit)}
+          sub={`${stats?.active_listings_count ?? 0} active listings`}
           icon={Zap}
           iconBg="bg-green-900/50"
           valueColor="text-green-400"

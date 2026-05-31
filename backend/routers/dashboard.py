@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select
 from database import get_session
-from models import Item, Sale, Expense
+from models import Item, Sale, Expense, Listing
 from collections import defaultdict
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -12,20 +12,27 @@ def get_stats(session: Session = Depends(get_session)):
     sales = session.exec(select(Sale)).all()
     items = session.exec(select(Item)).all()
     expenses = session.exec(select(Expense)).all()
+    listings = session.exec(select(Listing)).all()
 
     gross_revenue = sum(s.sale_price for s in sales)
-    total_fees = sum(s.platform_fees + s.shipping_cost for s in sales)
-    total_invested = sum(i.purchase_price * i.quantity for i in items)
     net_profit = sum(s.net_profit for s in sales)
     total_expenses = sum(e.amount for e in expenses)
+    total_fees = sum(s.platform_fees + s.shipping_cost for s in sales)
 
-    # Items currently in stock (not sold)
     in_stock = [i for i in items if i.status == "In Stock"]
     listed = [i for i in items if i.status == "Listed"]
+    sold = [i for i in items if i.status == "Sold"]
 
-    # Potential profit: sum of items still listed / in stock (assume they sell at purchase price as floor)
-    # We don't have asking prices here easily, so we just count unrealized cost
-    potential_inventory_value = sum(i.purchase_price * i.quantity for i in in_stock + listed)
+    # Only count money tied up in active (unsold) inventory
+    total_invested = sum(i.purchase_price * i.quantity for i in in_stock + listed)
+
+    # Potential profit = asking price minus purchase cost for each active listing
+    item_map = {i.id: i for i in items}
+    potential_profit = sum(
+        l.asking_price - item_map[l.item_id].purchase_price
+        for l in listings
+        if l.item_id in item_map
+    )
 
     return {
         "gross_revenue": round(gross_revenue, 2),
@@ -35,8 +42,9 @@ def get_stats(session: Session = Depends(get_session)):
         "total_expenses": round(total_expenses, 2),
         "items_in_stock": len(in_stock),
         "items_listed": len(listed),
-        "items_sold": len([i for i in items if i.status == "Sold"]),
-        "potential_inventory_value": round(potential_inventory_value, 2),
+        "items_sold": len(sold),
+        "potential_profit": round(potential_profit, 2),
+        "active_listings_count": len(listings),
     }
 
 
