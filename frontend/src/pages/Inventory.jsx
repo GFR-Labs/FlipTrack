@@ -135,13 +135,25 @@ function ItemForm({ initial, onSubmit, onClose }) {
   })
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
   const net = form.status === 'Sold' && form.sale_price !== ''
     ? (parseFloat(form.sale_price) || 0) - (parseFloat(form.platform_fees) || 0) - (parseFloat(form.shipping_cost) || 0) - (parseFloat(form.purchase_price) || 0)
     : null
 
-  const handle = (e) => {
+  const handle = async (e) => {
     e.preventDefault()
-    onSubmit({ ...form, purchase_price: parseFloat(form.purchase_price), quantity: parseInt(form.quantity) })
+    setError('')
+    setSaving(true)
+    try {
+      await onSubmit({ ...form, purchase_price: parseFloat(form.purchase_price), quantity: parseInt(form.quantity) })
+      onClose()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -230,8 +242,9 @@ function ItemForm({ initial, onSubmit, onClose }) {
         </div>
       )}
 
+      {error && <p className="text-red-400 text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
-        <button type="submit" className="btn-primary flex-1 justify-center">Save Item</button>
+        <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Saving…' : 'Save Item'}</button>
         <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
       </div>
     </form>

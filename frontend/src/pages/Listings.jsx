@@ -71,10 +71,26 @@ function ListingForm({ initial, items, onSubmit, onClose }) {
   const [form, setForm] = useState(
     initial ?? { item_id: items[0]?.id ?? '', platform: 'eBay', asking_price: '', listed_date: today(), url: '' }
   )
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSaving(true)
+    try {
+      await onSubmit({ ...form, item_id: parseInt(form.item_id), asking_price: parseFloat(form.asking_price) })
+      onClose()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit({ ...form, item_id: parseInt(form.item_id), asking_price: parseFloat(form.asking_price) }) }} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <div>
         <label className="label block mb-1">Item</label>
         <select className="input" required value={form.item_id} onChange={(e) => set('item_id', e.target.value)}>
@@ -102,8 +118,9 @@ function ListingForm({ initial, items, onSubmit, onClose }) {
         <label className="label block mb-1">URL (optional)</label>
         <input className="input" type="url" value={form.url} onChange={(e) => set('url', e.target.value)} placeholder="https://..." />
       </div>
+      {error && <p className="text-red-400 text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
-        <button type="submit" className="btn-primary flex-1 justify-center">Save Listing</button>
+        <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Saving…' : 'Save Listing'}</button>
         <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
       </div>
     </form>

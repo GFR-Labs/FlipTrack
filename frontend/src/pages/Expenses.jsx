@@ -14,10 +14,26 @@ const fmtDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { m
 
 function ExpenseForm({ initial, onSubmit, onClose }) {
   const [form, setForm] = useState(initial ?? { category: CATEGORIES[0], amount: '', date: today(), description: '' })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSaving(true)
+    try {
+      await onSubmit({ ...form, amount: parseFloat(form.amount) })
+      onClose()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit({ ...form, amount: parseFloat(form.amount) }) }} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <div>
         <label className="label block mb-1">Category</label>
         <select className="input" value={form.category} onChange={(e) => set('category', e.target.value)}>
@@ -38,8 +54,9 @@ function ExpenseForm({ initial, onSubmit, onClose }) {
         <label className="label block mb-1">Description</label>
         <input className="input" value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="e.g. Bubble wrap roll, 200ft" />
       </div>
+      {error && <p className="text-red-400 text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
-        <button type="submit" className="btn-primary flex-1 justify-center">Save Expense</button>
+        <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Saving…' : 'Save Expense'}</button>
         <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
       </div>
     </form>
