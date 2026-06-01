@@ -23,6 +23,7 @@ function QuickListForm({ item, onSubmit, onClose }) {
     setError('')
     try {
       await onSubmit({ item_id: item.id, platform: form.platform, asking_price: parseFloat(form.asking_price), listed_date: form.listed_date, url: form.url })
+      onClose()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -78,6 +79,7 @@ function QuickSellForm({ item, onSubmit, onClose }) {
     setError('')
     try {
       await onSubmit({ item_id: item.id, sale_price: parseFloat(form.sale_price), platform_fees: parseFloat(form.platform_fees) || 0, shipping_cost: parseFloat(form.shipping_cost) || 0, sold_date: form.sold_date })
+      onClose()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -248,10 +250,8 @@ export default function Inventory() {
   const load = () => api.getItems().then(setItems).catch(console.error)
   useEffect(() => {
     load()
-    // Refresh when the browser tab becomes visible (handles switching back from Sold page)
     const onVisible = () => { if (document.visibilityState === 'visible') load() }
     document.addEventListener('visibilitychange', onVisible)
-    // Poll every 30s so sold items disappear even without navigating away
     const interval = setInterval(load, 30000)
     return () => {
       document.removeEventListener('visibilitychange', onVisible)

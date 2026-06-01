@@ -24,6 +24,7 @@ function QuickSellForm({ item, onSubmit, onClose }) {
     setError('')
     try {
       await onSubmit({ item_id: item.id, sale_price: parseFloat(form.sale_price), platform_fees: parseFloat(form.platform_fees) || 0, shipping_cost: parseFloat(form.shipping_cost) || 0, sold_date: form.sold_date })
+      onClose()
     } catch (err) {
       setError(err.message)
     } finally {

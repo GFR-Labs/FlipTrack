@@ -24,8 +24,12 @@ function StorageIndicator() {
         .then(setInfo)
         .catch(() => {})
     fetch_()
-    const t = setInterval(fetch_, 60_000)
-    return () => clearInterval(t)
+    const t = setInterval(fetch_, 30_000)
+    window.addEventListener('storage-changed', fetch_)
+    return () => {
+      clearInterval(t)
+      window.removeEventListener('storage-changed', fetch_)
+    }
   }, [])
 
   if (!info) return null

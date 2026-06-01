@@ -32,6 +32,7 @@ function SaleForm({ initial, items, onSubmit, onClose }) {
         platform_fees: parseFloat(form.platform_fees),
         shipping_cost: parseFloat(form.shipping_cost),
       })
+      onClose()
     } catch (err) {
       setError(err.message)
     } finally {

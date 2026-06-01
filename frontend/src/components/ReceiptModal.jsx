@@ -115,12 +115,14 @@ export default function ReceiptModal({ entityType, entityId, entityName, onClose
     }
     setUploading(false)
     load()
+    window.dispatchEvent(new Event('storage-changed'))
     if (inputRef.current) inputRef.current.value = ''
   }
 
   const handleDelete = async (id) => {
     await fetch(`${BASE}/receipts/${id}`, { method: 'DELETE' })
     load()
+    window.dispatchEvent(new Event('storage-changed'))
   }
 
   const onDrop = (e) => {
