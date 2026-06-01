@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Paperclip } from 'lucide-react'
 import { api } from '../api'
 import Modal from '../components/Modal'
+import ReceiptModal from '../components/ReceiptModal'
 
 const today = () => new Date().toISOString().slice(0, 10)
 const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n ?? 0)
@@ -90,6 +91,7 @@ export default function Sold() {
   const [items, setItems] = useState([])
   const [modal, setModal] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [receiptTarget, setReceiptTarget] = useState(null)
 
   const load = () => {
     api.getSales().then(setSales).catch(console.error)
@@ -166,6 +168,13 @@ export default function Sold() {
                   <td className="px-4 py-3 text-gray-400 hidden md:table-cell">{fmtDate(s.sold_date)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => setReceiptTarget({ id: s.id, name: s.item?.name ?? 'Sale' })}
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-yellow-400 hover:bg-yellow-950/30 transition-colors"
+                        title="Receipts"
+                      >
+                        <Paperclip className="w-3.5 h-3.5" />
+                      </button>
                       <button onClick={() => setModal(s)} className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#222] transition-colors">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -194,6 +203,15 @@ export default function Sold() {
           </table>
         </div>
       </div>
+
+      {receiptTarget && (
+        <ReceiptModal
+          entityType="sale"
+          entityId={receiptTarget.id}
+          entityName={receiptTarget.name}
+          onClose={() => setReceiptTarget(null)}
+        />
+      )}
 
       {modal === 'add' && (
         <Modal title="Record Sale" onClose={() => setModal(null)}>
