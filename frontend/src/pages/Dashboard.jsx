@@ -42,8 +42,18 @@ export default function Dashboard() {
   const [monthly, setMonthly] = useState([])
 
   useEffect(() => {
-    api.dashboardStats().then(setStats).catch(console.error)
-    api.dashboardMonthly().then(setMonthly).catch(console.error)
+    const load = () => {
+      api.dashboardStats().then(setStats).catch(console.error)
+      api.dashboardMonthly().then(setMonthly).catch(console.error)
+    }
+    load()
+    const onVisible = () => { if (document.visibilityState === 'visible') load() }
+    document.addEventListener('visibilitychange', onVisible)
+    const interval = setInterval(load, 30_000)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      clearInterval(interval)
+    }
   }, [])
 
   return (
