@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Plus, Search, Pencil, Trash2, Paperclip, Tag, DollarSign } from 'lucide-react'
 import { api } from '../api'
 import Modal from '../components/Modal'
@@ -16,9 +16,12 @@ function QuickListForm({ item, onSubmit, onClose }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const submitting = useRef(false)
 
   const handle = async (e) => {
     e.preventDefault()
+    if (submitting.current) return
+    submitting.current = true
     setSaving(true)
     setError('')
     try {
@@ -27,6 +30,7 @@ function QuickListForm({ item, onSubmit, onClose }) {
     } catch (err) {
       setError(err.message)
     } finally {
+      submitting.current = false
       setSaving(false)
     }
   }
@@ -68,6 +72,7 @@ function QuickSellForm({ item, onSubmit, onClose }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const submitting = useRef(false)
 
   const net = form.sale_price !== ''
     ? (parseFloat(form.sale_price) || 0) - (parseFloat(form.platform_fees) || 0) - (parseFloat(form.shipping_cost) || 0) - item.purchase_price
@@ -75,6 +80,8 @@ function QuickSellForm({ item, onSubmit, onClose }) {
 
   const handle = async (e) => {
     e.preventDefault()
+    if (submitting.current) return
+    submitting.current = true
     setSaving(true)
     setError('')
     try {
@@ -83,6 +90,7 @@ function QuickSellForm({ item, onSubmit, onClose }) {
     } catch (err) {
       setError(err.message)
     } finally {
+      submitting.current = false
       setSaving(false)
     }
   }
@@ -137,6 +145,7 @@ function ItemForm({ initial, onSubmit, onClose }) {
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const submitting = useRef(false)
 
   const net = form.status === 'Sold' && form.sale_price !== ''
     ? (parseFloat(form.sale_price) || 0) - (parseFloat(form.platform_fees) || 0) - (parseFloat(form.shipping_cost) || 0) - (parseFloat(form.purchase_price) || 0)
@@ -144,6 +153,8 @@ function ItemForm({ initial, onSubmit, onClose }) {
 
   const handle = async (e) => {
     e.preventDefault()
+    if (submitting.current) return
+    submitting.current = true
     setError('')
     setSaving(true)
     try {
@@ -152,6 +163,7 @@ function ItemForm({ initial, onSubmit, onClose }) {
     } catch (err) {
       setError(err.message)
     } finally {
+      submitting.current = false
       setSaving(false)
     }
   }
@@ -256,6 +268,8 @@ export default function Inventory() {
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState(null) // null | 'add' | {item}
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
   const [receiptTarget, setReceiptTarget] = useState(null) // {id, name}
   const [listTarget, setListTarget] = useState(null) // item for quick-list
   const [sellTarget, setSellTarget] = useState(null) // item for quick-sell
@@ -308,9 +322,17 @@ export default function Inventory() {
   }
 
   const handleDelete = async (id) => {
-    await api.deleteItem(id)
-    setConfirmDelete(null)
-    load()
+    setDeleting(true)
+    setDeleteError('')
+    try {
+      await api.deleteItem(id)
+      setConfirmDelete(null)
+      load()
+    } catch (err) {
+      setDeleteError(err.message)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -415,7 +437,7 @@ export default function Inventory() {
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => setConfirmDelete(item)}
+                        onClick={() => { setConfirmDelete(item); setDeleteError('') }}
                         className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-950/30 transition-colors"
                         title="Delete"
                       >
@@ -486,18 +508,20 @@ export default function Inventory() {
 
       {/* Delete confirm */}
       {confirmDelete && (
-        <Modal title="Delete Item" onClose={() => setConfirmDelete(null)}>
+        <Modal title="Delete Item" onClose={() => { if (!deleting) { setConfirmDelete(null); setDeleteError('') } }}>
           <p className="text-gray-400 text-sm mb-4">
             Are you sure you want to delete <span className="text-white font-medium">{confirmDelete.name}</span>? This cannot be undone.
           </p>
+          {deleteError && <p className="text-red-400 text-sm mb-3">{deleteError}</p>}
           <div className="flex gap-2">
             <button
               onClick={() => handleDelete(confirmDelete.id)}
-              className="flex-1 bg-red-600 hover:bg-red-500 text-white font-medium py-2 rounded-xl transition-colors"
+              disabled={deleting}
+              className="flex-1 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 rounded-xl transition-colors"
             >
-              Delete
+              {deleting ? 'Deleting…' : 'Delete'}
             </button>
-            <button onClick={() => setConfirmDelete(null)} className="btn-ghost flex-1 text-center">
+            <button onClick={() => { setConfirmDelete(null); setDeleteError('') }} disabled={deleting} className="btn-ghost flex-1 text-center disabled:opacity-50">
               Cancel
             </button>
           </div>
