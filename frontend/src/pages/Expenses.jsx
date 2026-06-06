@@ -8,22 +8,44 @@ const CATEGORIES = [
   'Shipping Supplies', 'eBay Fees', 'PayPal Fees', 'Mileage', 'Storage',
   'Packaging', 'Tools & Equipment', 'Advertising', 'Software', 'Other',
 ]
+const MILEAGE_RATES = { 2023: 0.655, 2024: 0.67, 2025: 0.70 }
+const LATEST_MILEAGE_YEAR = Math.max(...Object.keys(MILEAGE_RATES).map(Number))
+
+function getMileageRate(dateStr) {
+  const year = dateStr ? new Date(dateStr + 'T12:00:00').getFullYear() : new Date().getFullYear()
+  return { rate: MILEAGE_RATES[year] ?? MILEAGE_RATES[LATEST_MILEAGE_YEAR], year, confirmed: year in MILEAGE_RATES }
+}
 const today = () => new Date().toISOString().slice(0, 10)
 const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n ?? 0)
 const fmtDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
 function ExpenseForm({ initial, onSubmit, onClose }) {
+  const isMileage = (cat) => cat === 'Mileage'
+
+  // Back-calculate miles when editing an existing mileage expense
+  const initialMiles = (() => {
+    if (!initial || !isMileage(initial.category) || !initial.amount) return ''
+    const { rate } = getMileageRate(initial.date)
+    const m = initial.amount / rate
+    return String(Math.round(m * 10) / 10)
+  })()
+
   const [form, setForm] = useState(initial ?? { category: CATEGORIES[0], amount: '', date: today(), description: '' })
+  const [miles, setMiles] = useState(initialMiles)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  const { rate, year, confirmed } = getMileageRate(form.date)
+  const mileageAmount = miles !== '' && !isNaN(parseFloat(miles)) ? parseFloat(miles) * rate : null
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSaving(true)
     try {
-      await onSubmit({ ...form, amount: parseFloat(form.amount) })
+      const amount = isMileage(form.category) ? parseFloat(miles) * rate : parseFloat(form.amount)
+      await onSubmit({ ...form, amount })
       onClose()
     } catch (err) {
       setError(err.message)
@@ -41,18 +63,60 @@ function ExpenseForm({ initial, onSubmit, onClose }) {
         </select>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label block mb-1">Amount</label>
-          <input className="input" type="number" step="0.01" min="0" required value={form.amount} onChange={(e) => set('amount', e.target.value)} placeholder="0.00" />
-        </div>
+        {isMileage(form.category) ? (
+          <div>
+            <label className="label block mb-1">Miles</label>
+            <input
+              className="input"
+              type="number"
+              step="0.1"
+              min="0"
+              required
+              value={miles}
+              onChange={(e) => setMiles(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+        ) : (
+          <div>
+            <label className="label block mb-1">Amount</label>
+            <input className="input" type="number" step="0.01" min="0" required value={form.amount} onChange={(e) => set('amount', e.target.value)} placeholder="0.00" />
+          </div>
+        )}
         <div>
           <label className="label block mb-1">Date</label>
           <input className="input" type="date" required value={form.date} onChange={(e) => set('date', e.target.value)} />
         </div>
       </div>
+
+      {isMileage(form.category) && (
+        <div className={`rounded-xl border px-4 py-3 text-sm ${confirmed ? 'border-blue-800/30 bg-blue-950/20' : 'border-yellow-800/30 bg-yellow-950/20'}`}>
+          {mileageAmount !== null ? (
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-gray-400 font-mono text-xs">
+                {parseFloat(miles).toLocaleString()} mi × ${rate.toFixed(3)}/mi
+              </span>
+              <span className="text-white font-mono font-semibold">{fmt(mileageAmount)}</span>
+            </div>
+          ) : (
+            <span className="text-gray-500 text-xs">Enter miles to calculate amount</span>
+          )}
+          <div className={`text-xs mt-1 ${confirmed ? 'text-blue-400/70' : 'text-yellow-400/70'}`}>
+            {confirmed
+              ? `${year} IRS standard mileage rate`
+              : `${year} rate not confirmed — using ${LATEST_MILEAGE_YEAR} rate. Verify at IRS.gov`}
+          </div>
+        </div>
+      )}
+
       <div>
         <label className="label block mb-1">Description</label>
-        <input className="input" value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="e.g. Bubble wrap roll, 200ft" />
+        <input
+          className="input"
+          value={form.description}
+          onChange={(e) => set('description', e.target.value)}
+          placeholder={isMileage(form.category) ? 'e.g. Parts run to Goodwill, eBay pickup' : 'e.g. Bubble wrap roll, 200ft'}
+        />
       </div>
       {error && <p className="text-red-400 text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
