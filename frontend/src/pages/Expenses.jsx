@@ -8,7 +8,7 @@ const CATEGORIES = [
   'Shipping Supplies', 'eBay Fees', 'PayPal Fees', 'Mileage', 'Storage',
   'Packaging', 'Tools & Equipment', 'Advertising', 'Software', 'Other',
 ]
-const MILEAGE_RATES = { 2023: 0.655, 2024: 0.67, 2025: 0.70 }
+const MILEAGE_RATES = { 2023: 0.655, 2024: 0.67, 2025: 0.70, 2026: 0.725 }
 const LATEST_MILEAGE_YEAR = Math.max(...Object.keys(MILEAGE_RATES).map(Number))
 
 function getMileageRate(dateStr) {
