@@ -26,8 +26,8 @@ class Item(SQLModel, table=True):
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    listings: list["Listing"] = Relationship(back_populates="item", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
-    sales: list["Sale"] = Relationship(back_populates="item", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    listings: list["Listing"] = Relationship(back_populates="item", sa_relationship_kwargs={"cascade": "all, delete"})
+    sales: list["Sale"] = Relationship(back_populates="item", sa_relationship_kwargs={"cascade": "all, delete"})
 
 
 class Listing(SQLModel, table=True):

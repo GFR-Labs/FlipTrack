@@ -310,7 +310,8 @@ export default function Inventory() {
 
   const handleEdit = async (data) => {
     const { asking_price, platform, listed_date, sale_price, platform_fees, shipping_cost, sold_date, ...itemData } = data
-    await api.updateItem(modal.id, itemData)
+    const updated = await api.updateItem(modal.id, itemData)
+    setItems(prev => prev.map(i => i.id === updated.id ? updated : i))
     const prevStatus = modal.status
     if (itemData.status === 'Listed' && prevStatus !== 'Listed' && asking_price) {
       await api.createListing({ item_id: modal.id, platform: platform || 'eBay', asking_price: parseFloat(asking_price), listed_date: listed_date || today(), url: '' })
