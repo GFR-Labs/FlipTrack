@@ -2,7 +2,7 @@ import os
 from sqlmodel import SQLModel, create_engine, Session
 
 DB_PATH = os.getenv("DATABASE_URL", "sqlite:////data/fliptrack.db")
-engine = create_engine(DB_PATH, echo=False, connect_args={"check_same_thread": False})
+engine = create_engine(DB_PATH, echo=False, connect_args={"check_same_thread": False, "timeout": 30})
 
 
 def init_db():

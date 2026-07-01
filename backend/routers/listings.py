@@ -26,7 +26,6 @@ def create_listing(listing: ListingCreate, session: Session = Depends(get_sessio
     db_listing = Listing.model_validate(listing)
     session.add(db_listing)
     item.status = "Listed"
-    session.add(item)
     session.commit()
     session.refresh(db_listing)
     d = db_listing.model_dump()

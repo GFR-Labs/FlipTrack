@@ -23,15 +23,14 @@ def get_stats(session: Session = Depends(get_session)):
     listed = [i for i in items if i.status == "Listed"]
     sold = [i for i in items if i.status == "Sold"]
 
-    # Only count money tied up in active (unsold) inventory
-    total_invested = sum(i.purchase_price * i.quantity for i in in_stock + listed)
+    total_invested = sum(i.purchase_price * i.quantity for i in items)
 
-    # Potential profit = asking price minus purchase cost for each active listing
+    # Potential profit = asking price minus purchase cost, only for items still listed
     item_map = {i.id: i for i in items}
     potential_profit = sum(
         l.asking_price - item_map[l.item_id].purchase_price
         for l in listings
-        if l.item_id in item_map
+        if l.item_id in item_map and item_map[l.item_id].status == "Listed"
     )
 
     return {

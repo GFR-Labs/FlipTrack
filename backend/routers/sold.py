@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from database import get_session
-from models import Item, Sale, SaleCreate, SaleRead, SaleUpdate
+from models import Item, Listing, Sale, SaleCreate, SaleRead, SaleUpdate
 
 router = APIRouter(prefix="/api/sold", tags=["sold"])
 
@@ -31,7 +31,9 @@ def create_sale(sale: SaleCreate, session: Session = Depends(get_session)):
     db_sale = Sale(**sale.model_dump(), net_profit=net)
     session.add(db_sale)
     item.status = "Sold"
-    session.add(item)
+    # Remove any open listings for this item so they don't linger
+    for listing in session.exec(select(Listing).where(Listing.item_id == sale.item_id)).all():
+        session.delete(listing)
     session.commit()
     session.refresh(db_sale)
     d = db_sale.model_dump()
