@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import delete
 from sqlmodel import Session, select
 from database import get_session
-from models import Item, ItemCreate, ItemRead, ItemUpdate
+from models import Item, ItemCreate, ItemRead, ItemUpdate, Listing, Sale
 
 router = APIRouter(prefix="/api/inventory", tags=["inventory"])
 
@@ -46,5 +47,7 @@ def delete_item(item_id: int, session: Session = Depends(get_session)):
     item = session.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+    session.execute(delete(Listing).where(Listing.item_id == item_id))
+    session.execute(delete(Sale).where(Sale.item_id == item_id))
     session.delete(item)
     session.commit()

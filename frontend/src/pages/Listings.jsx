@@ -275,7 +275,6 @@ export default function Listings() {
             item={sellTarget.item}
             onSubmit={async (data) => {
               await api.createSale(data)
-              await api.deleteListing(sellTarget.id)
               setSellTarget(null)
               load()
             }}

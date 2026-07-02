@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import delete
 from sqlmodel import Session, select
 from database import get_session
 from models import Item, Listing, Sale, SaleCreate, SaleRead, SaleUpdate
@@ -31,9 +32,7 @@ def create_sale(sale: SaleCreate, session: Session = Depends(get_session)):
     db_sale = Sale(**sale.model_dump(), net_profit=net)
     session.add(db_sale)
     item.status = "Sold"
-    # Remove any open listings for this item so they don't linger
-    for listing in session.exec(select(Listing).where(Listing.item_id == sale.item_id)).all():
-        session.delete(listing)
+    session.execute(delete(Listing).where(Listing.item_id == sale.item_id))
     session.commit()
     session.refresh(db_sale)
     d = db_sale.model_dump()
