@@ -67,7 +67,8 @@ function QuickSellForm({ item, onSubmit, onClose }) {
   )
 }
 
-function ListingForm({ initial, items, onSubmit, onClose }) {
+function ListingForm({ initial, itemName, items, onSubmit, onClose }) {
+  const isEdit = !!initial
   const [form, setForm] = useState(
     initial ?? { item_id: items[0]?.id ?? '', platform: 'eBay', asking_price: '', listed_date: today(), url: '' }
   )
@@ -93,10 +94,14 @@ function ListingForm({ initial, items, onSubmit, onClose }) {
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
         <label className="label block mb-1">Item</label>
-        <select className="input" required value={form.item_id} onChange={(e) => set('item_id', e.target.value)}>
-          <option value="">Select item…</option>
-          {items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
-        </select>
+        {isEdit ? (
+          <div className="input bg-[#111] text-white cursor-default">{itemName ?? `Item #${form.item_id}`}</div>
+        ) : (
+          <select className="input" required value={form.item_id} onChange={(e) => set('item_id', e.target.value)}>
+            <option value="">Select item…</option>
+            {items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+          </select>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -253,6 +258,7 @@ export default function Listings() {
         <Modal title="Edit Listing" onClose={() => setModal(null)}>
           <ListingForm
             initial={{ item_id: modal.item_id, platform: modal.platform, asking_price: modal.asking_price, listed_date: modal.listed_date, url: modal.url ?? '' }}
+            itemName={modal.item?.name}
             items={availableItems}
             onSubmit={handleEdit}
             onClose={() => setModal(null)}
