@@ -172,3 +172,32 @@ class ExpenseUpdate(SQLModel):
     amount: Optional[float] = None
     date: Optional[date] = None
     description: Optional[str] = None
+
+
+# ── Helpers ─────────────────────────────────────────────────────────────────
+
+def item_payload(item: Optional[Item]) -> Optional[dict]:
+    """Serialize an Item for embedding in a Listing/Sale response.
+
+    Reads through attribute access rather than model_dump(), because
+    session.commit() expires every instance by clearing its __dict__ and
+    model_dump() reads __dict__ directly — it would return {} instead of
+    reloading the row.
+    """
+    if item is None:
+        return None
+    return ItemRead.model_validate(item, from_attributes=True).model_dump()
+
+
+def apply_updates(obj: SQLModel, updates: SQLModel, nullable: frozenset[str] = frozenset()) -> None:
+    """Apply a PATCH payload, skipping nulls for columns that can't hold them.
+
+    Every field on the *Update schemas defaults to None so it can be omitted,
+    which means an explicit null is indistinguishable from "clear this value".
+    Only fields listed in `nullable` are allowed to be set to None; writing
+    None to any other column raises IntegrityError on commit.
+    """
+    for field, value in updates.model_dump(exclude_unset=True).items():
+        if value is None and field not in nullable:
+            continue
+        setattr(obj, field, value)

@@ -19,5 +19,8 @@ def init_db():
 
 
 def get_session():
-    with Session(engine) as session:
+    # expire_on_commit=False keeps attributes readable after commit. With the
+    # default, commit() clears each instance's __dict__ and any model_dump()
+    # that follows serializes to {} instead of reloading the row.
+    with Session(engine, expire_on_commit=False) as session:
         yield session

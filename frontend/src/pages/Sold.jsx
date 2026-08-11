@@ -8,7 +8,8 @@ const today = () => new Date().toISOString().slice(0, 10)
 const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n ?? 0)
 const fmtDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
-function SaleForm({ initial, items, onSubmit, onClose }) {
+function SaleForm({ initial, editItem, items, onSubmit, onClose }) {
+  const isEdit = !!initial
   const [form, setForm] = useState(
     initial ?? { item_id: items[0]?.id ?? '', sale_price: '', platform_fees: '0', shipping_cost: '0', sold_date: today() }
   )
@@ -16,7 +17,8 @@ function SaleForm({ initial, items, onSubmit, onClose }) {
   const [saving, setSaving] = useState(false)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
-  const item = items.find((i) => i.id === parseInt(form.item_id))
+  // A sold item is filtered out of `items`, so on edit the item comes from the sale itself
+  const item = isEdit ? editItem : items.find((i) => i.id === parseInt(form.item_id))
   const net = item
     ? (parseFloat(form.sale_price) || 0) - (parseFloat(form.platform_fees) || 0) - (parseFloat(form.shipping_cost) || 0) - item.purchase_price
     : null
@@ -45,10 +47,17 @@ function SaleForm({ initial, items, onSubmit, onClose }) {
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
         <label className="label block mb-1">Item</label>
-        <select className="input" required value={form.item_id} onChange={(e) => set('item_id', e.target.value)}>
-          <option value="">Select item…</option>
-          {items.map((i) => <option key={i.id} value={i.id}>{i.name} (cost: {fmt(i.purchase_price)})</option>)}
-        </select>
+        {isEdit ? (
+          <div className="input bg-[#111] text-white cursor-default">
+            {editItem?.name ?? `Item #${form.item_id}`}
+            {editItem && <span className="text-gray-600 font-mono"> (cost: {fmt(editItem.purchase_price)})</span>}
+          </div>
+        ) : (
+          <select className="input" required value={form.item_id} onChange={(e) => set('item_id', e.target.value)}>
+            <option value="">Select item…</option>
+            {items.map((i) => <option key={i.id} value={i.id}>{i.name} (cost: {fmt(i.purchase_price)})</option>)}
+          </select>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -222,6 +231,7 @@ export default function Sold() {
         <Modal title="Edit Sale" onClose={() => setModal(null)}>
           <SaleForm
             initial={{ item_id: modal.item_id, sale_price: modal.sale_price, platform_fees: modal.platform_fees, shipping_cost: modal.shipping_cost, sold_date: modal.sold_date }}
+            editItem={modal.item}
             items={availableItems}
             onSubmit={handleEdit}
             onClose={() => setModal(null)}

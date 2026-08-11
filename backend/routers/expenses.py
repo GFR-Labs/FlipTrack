@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from database import get_session
-from models import Expense, ExpenseCreate, ExpenseRead, ExpenseUpdate
+from models import Expense, ExpenseCreate, ExpenseRead, ExpenseUpdate, apply_updates
 
 router = APIRouter(prefix="/api/expenses", tags=["expenses"])
+
+NULLABLE = frozenset({"description"})
 
 
 @router.get("/", response_model=list[ExpenseRead])
@@ -33,8 +35,7 @@ def update_expense(expense_id: int, updates: ExpenseUpdate, session: Session = D
     expense = session.get(Expense, expense_id)
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
-    for field, value in updates.model_dump(exclude_unset=True).items():
-        setattr(expense, field, value)
+    apply_updates(expense, updates, NULLABLE)
     session.add(expense)
     session.commit()
     session.refresh(expense)

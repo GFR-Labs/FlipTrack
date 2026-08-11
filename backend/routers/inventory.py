@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete
 from sqlmodel import Session, select
 from database import get_session
-from models import Item, ItemCreate, ItemRead, ItemUpdate, Listing, Sale
+from models import Item, ItemCreate, ItemRead, ItemUpdate, Listing, Sale, apply_updates
 
 router = APIRouter(prefix="/api/inventory", tags=["inventory"])
+
+NULLABLE = frozenset({"notes"})
 
 
 @router.get("/", response_model=list[ItemRead])
@@ -34,8 +36,7 @@ def update_item(item_id: int, updates: ItemUpdate, session: Session = Depends(ge
     item = session.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    for field, value in updates.model_dump(exclude_unset=True).items():
-        setattr(item, field, value)
+    apply_updates(item, updates, NULLABLE)
     session.add(item)
     session.commit()
     session.refresh(item)
