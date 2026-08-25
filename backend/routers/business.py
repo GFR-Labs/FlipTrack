@@ -163,7 +163,10 @@ def _sales_sheet(ws, sales, items_map: dict, receipts_map: dict):
         bg   = BG_ALT if i % 2 else BG_WHITE
         item = items_map.get(sale.item_id)
         cost = item.purchase_price if item else 0.0
-        receipts = ", ".join(receipts_map.get(("item", sale.item_id), []))
+        receipts = ", ".join(
+            receipts_map.get(("item", sale.item_id), [])
+            + receipts_map.get(("sale", sale.id), [])
+        )
 
         def cell(col, val, _r=r, _bg=bg):
             c = ws.cell(row=_r, column=col, value=val)
@@ -297,6 +300,8 @@ def export_zip(
 
     expense_ids    = [e.id for e in expenses]
     expenses_by_id = {e.id: e for e in expenses}
+    sale_ids       = [s.id for s in sales]
+    sales_by_id    = {s.id: s for s in sales}
 
     raw_receipts: list[Receipt] = []
     if item_ids:
@@ -307,21 +312,31 @@ def export_zip(
         raw_receipts += session.exec(
             select(Receipt).where(Receipt.entity_type == "expense", Receipt.entity_id.in_(expense_ids))
         ).all()
+    if sale_ids:
+        raw_receipts += session.exec(
+            select(Receipt).where(Receipt.entity_type == "sale", Receipt.entity_id.in_(sale_ids))
+        ).all()
 
     # Build receipt maps
     receipts_map: dict[tuple, list[str]] = defaultdict(list)
     disk_files: list[tuple[Path, str]] = []
 
     for r in raw_receipts:
-        disk = RECEIPTS_DIR / r.filename
-        if not disk.exists():
-            continue
         if r.entity_type == "item":
             item  = items_map.get(r.entity_id)
             label = _safe(item.name) if item else "item"
+        elif r.entity_type == "sale":
+            sale  = sales_by_id.get(r.entity_id)
+            item  = items_map.get(sale.item_id) if sale else None
+            label = _safe(item.name) if item else "sale"
         else:
             exp   = expenses_by_id.get(r.entity_id)
             label = _safe(exp.description or exp.category) if exp else "expense"
+        disk = RECEIPTS_DIR / r.filename
+        if not disk.exists():
+            # Surface the gap in the report instead of dropping the receipt silently
+            receipts_map[(r.entity_type, r.entity_id)].append(f"[FILE MISSING: {r.original_name}]")
+            continue
         ext      = Path(r.filename).suffix
         zip_name = f"receipts/{r.entity_type}_{r.entity_id}_{label}_{r.id}{ext}"
         receipts_map[(r.entity_type, r.entity_id)].append(zip_name)
