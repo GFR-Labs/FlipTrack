@@ -38,34 +38,34 @@
 }
 
 .dark {
-  --c-paper:     10  10  10;  /* #0a0a0a */
-  --c-cream:     17  17  17;  /* #111111 */
-  --c-sand:      26  26  26;  /* #1a1a1a */
-  --c-edge:      42  42  42;  /* #2a2a2a */
-  --c-ink:      245 245 245;  /* #f5f5f5 */
-  --c-inkmut:   156 163 175;  /* gray-400 */
-  --c-inkfaint: 107 114 128;  /* gray-500 */
-  --c-moss:      74 222 128;  /* green-400 */
-  --c-mossdeep:  34 197  94;  /* green-500 */
-  --c-clay:     248 113 113;  /* red-400 */
-  --c-ochre:    250 204  21;  /* yellow-400 */
-  --c-sea:       96 165 250;  /* blue-400 */
+  --c-paper:     26  23  18;  /* #1a1712 warm near-black */
+  --c-cream:     34  30  24;  /* #221e18 card surface */
+  --c-sand:      44  39  30;  /* #2c271e raised / hover */
+  --c-edge:      60  53  41;  /* #3c3529 hairline borders */
+  --c-ink:      236 228 212;  /* #ece4d4 warm off-white */
+  --c-inkmut:   169 156 133;  /* #a99c85 secondary */
+  --c-inkfaint: 119 108  89;  /* #776c59 tertiary */
+  --c-moss:     111 175 140;  /* #6faf8c muted sage */
+  --c-mossdeep:  77 138 107;  /* #4d8a6b */
+  --c-clay:     200 127 102;  /* #c87f66 terracotta */
+  --c-ochre:    201 162  87;  /* #c9a257 */
+  --c-sea:      127 163 196;  /* #7fa3c4 dusty blue */
 
-  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
-  --card-shadow: none;
-  --btn-bg: #22c55e;
-  --btn-bg-hover: #4ade80;
-  --btn-fg: #000000;
-  --input-bg: #1a1a1a;
+  --card-shadow: 2px 2px 0 rgb(0 0 0 / 0.25);
+  --btn-bg: #ece4d4;
+  --btn-bg-hover: #6faf8c;
+  --btn-fg: #221e18;
+  --input-bg: #161310;
 
-  --chart-revenue: #3b82f6;
-  --chart-profit: #22c55e;
-  --chart-grid: #1f1f1f;
-  --chart-tick: #6b7280;
-  --chart-cursor: rgb(255 255 255 / 0.04);
+  --chart-revenue: #7fa3c4;
+  --chart-profit: #6faf8c;
+  --chart-grid: #3c3529;
+  --chart-tick: #a99c85;
+  --chart-cursor: rgb(236 228 212 / 0.05);
 }
 
 @layer base {
