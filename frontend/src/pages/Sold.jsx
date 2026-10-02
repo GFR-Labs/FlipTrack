@@ -48,9 +48,9 @@ function SaleForm({ initial, editItem, items, onSubmit, onClose }) {
       <div>
         <label className="label block mb-1">Item</label>
         {isEdit ? (
-          <div className="input bg-[#111] text-white cursor-default">
+          <div className="input bg-sand text-ink cursor-default">
             {editItem?.name ?? `Item #${form.item_id}`}
-            {editItem && <span className="text-gray-600 font-mono"> (cost: {fmt(editItem.purchase_price)})</span>}
+            {editItem && <span className="text-inkfaint font-mono"> (cost: {fmt(editItem.purchase_price)})</span>}
           </div>
         ) : (
           <select className="input" required value={form.item_id} onChange={(e) => set('item_id', e.target.value)}>
@@ -80,11 +80,11 @@ function SaleForm({ initial, editItem, items, onSubmit, onClose }) {
         </div>
       </div>
       {net !== null && (
-        <div className={`rounded-xl border px-4 py-3 text-sm font-mono font-medium ${net >= 0 ? 'bg-green-950/30 border-green-800/30 text-green-400' : 'bg-red-950/30 border-red-800/30 text-red-400'}`}>
+        <div className={`rounded border px-4 py-3 text-sm font-mono font-medium ${net >= 0 ? 'bg-moss/10 border-moss/40 text-moss' : 'bg-clay/10 border-clay/40 text-clay'}`}>
           Estimated Net Profit: {fmt(net)}
         </div>
       )}
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-clay text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
         <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">
           {saving ? 'Recording…' : 'Record Sale'}
@@ -122,22 +122,22 @@ export default function Sold() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-white">Sold</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Completed sales and profit tracking</p>
+        <h1 className="text-2xl font-semibold text-ink">Sold</h1>
+        <p className="text-sm text-inkmut mt-0.5">Completed sales and profit tracking</p>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
         <div className="card px-4 py-3">
-          <div className="text-xs text-gray-500 mb-1">Total Sales</div>
-          <div className="text-xl font-bold text-white font-mono">{sales.length}</div>
+          <div className="text-xs text-inkmut mb-1">Total Sales</div>
+          <div className="text-2xl font-semibold text-ink font-mono">{sales.length}</div>
         </div>
         <div className="card px-4 py-3">
-          <div className="text-xs text-gray-500 mb-1">Gross Revenue</div>
-          <div className="text-xl font-bold text-blue-400 font-mono">{fmt(totalRevenue)}</div>
+          <div className="text-xs text-inkmut mb-1">Gross Revenue</div>
+          <div className="text-xl font-bold text-sea font-mono">{fmt(totalRevenue)}</div>
         </div>
         <div className="card px-4 py-3">
-          <div className="text-xs text-gray-500 mb-1">Net Profit</div>
-          <div className={`text-xl font-bold font-mono ${totalProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>{fmt(totalProfit)}</div>
+          <div className="text-xs text-inkmut mb-1">Net Profit</div>
+          <div className={`text-xl font-bold font-mono ${totalProfit >= 0 ? 'text-moss' : 'text-clay'}`}>{fmt(totalProfit)}</div>
         </div>
       </div>
 
@@ -151,7 +151,7 @@ export default function Sold() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#1f1f1f]">
+              <tr className="border-b border-edge">
                 <th className="label px-4 py-3 text-left">Item</th>
                 <th className="label px-4 py-3 text-right">Sale Price</th>
                 <th className="label px-4 py-3 text-right hidden sm:table-cell">Fees</th>
@@ -163,31 +163,31 @@ export default function Sold() {
             </thead>
             <tbody>
               {sales.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-600">No sales recorded yet</td></tr>
+                <tr><td colSpan={7} className="px-4 py-10 text-center text-inkfaint">No sales recorded yet</td></tr>
               )}
               {sales.map((s) => (
-                <tr key={s.id} className="border-b border-[#1a1a1a] hover:bg-[#161616] transition-colors">
-                  <td className="px-4 py-3 text-white font-medium">{s.item?.name ?? `Item #${s.item_id}`}</td>
-                  <td className="px-4 py-3 text-right font-mono text-gray-300">{fmt(s.sale_price)}</td>
-                  <td className="px-4 py-3 text-right font-mono text-gray-500 hidden sm:table-cell">{fmt(s.platform_fees)}</td>
-                  <td className="px-4 py-3 text-right font-mono text-gray-500 hidden sm:table-cell">{fmt(s.shipping_cost)}</td>
+                <tr key={s.id} className="border-b border-edge hover:bg-sand transition-colors">
+                  <td className="px-4 py-3 text-ink font-medium">{s.item?.name ?? `Item #${s.item_id}`}</td>
+                  <td className="px-4 py-3 text-right font-mono text-ink">{fmt(s.sale_price)}</td>
+                  <td className="px-4 py-3 text-right font-mono text-inkmut hidden sm:table-cell">{fmt(s.platform_fees)}</td>
+                  <td className="px-4 py-3 text-right font-mono text-inkmut hidden sm:table-cell">{fmt(s.shipping_cost)}</td>
                   <td className="px-4 py-3 text-right font-mono font-medium">
-                    <span className={s.net_profit >= 0 ? 'text-green-400' : 'text-red-400'}>{fmt(s.net_profit)}</span>
+                    <span className={s.net_profit >= 0 ? 'text-moss' : 'text-clay'}>{fmt(s.net_profit)}</span>
                   </td>
-                  <td className="px-4 py-3 text-gray-400 hidden md:table-cell">{fmtDate(s.sold_date)}</td>
+                  <td className="px-4 py-3 text-inkmut hidden md:table-cell">{fmtDate(s.sold_date)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => setReceiptTarget({ id: s.id, name: s.item?.name ?? 'Sale' })}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-yellow-400 hover:bg-yellow-950/30 transition-colors"
+                        className="p-1.5 rounded text-inkmut hover:text-ochre hover:bg-ochre/10 transition-colors"
                         title="Receipts"
                       >
                         <Paperclip className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => setModal(s)} className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#222] transition-colors">
+                      <button onClick={() => setModal(s)} className="p-1.5 rounded text-inkmut hover:text-ink hover:bg-sand transition-colors">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => setConfirmDelete(s)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-950/30 transition-colors">
+                      <button onClick={() => setConfirmDelete(s)} className="p-1.5 rounded text-inkmut hover:text-clay hover:bg-clay/10 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -197,13 +197,13 @@ export default function Sold() {
             </tbody>
             {sales.length > 0 && (
               <tfoot>
-                <tr className="border-t border-[#2a2a2a] bg-[#161616]">
-                  <td className="px-4 py-3 text-gray-500 text-xs font-medium uppercase tracking-wider">Totals</td>
-                  <td className="px-4 py-3 text-right font-mono text-gray-300 font-medium">{fmt(totalRevenue)}</td>
-                  <td className="px-4 py-3 text-right font-mono text-gray-500 hidden sm:table-cell">{fmt(sales.reduce((s, x) => s + x.platform_fees, 0))}</td>
-                  <td className="px-4 py-3 text-right font-mono text-gray-500 hidden sm:table-cell">{fmt(sales.reduce((s, x) => s + x.shipping_cost, 0))}</td>
+                <tr className="border-t border-edge bg-sand">
+                  <td className="px-4 py-3 text-inkmut text-xs font-medium uppercase tracking-wider">Totals</td>
+                  <td className="px-4 py-3 text-right font-mono text-ink font-medium">{fmt(totalRevenue)}</td>
+                  <td className="px-4 py-3 text-right font-mono text-inkmut hidden sm:table-cell">{fmt(sales.reduce((s, x) => s + x.platform_fees, 0))}</td>
+                  <td className="px-4 py-3 text-right font-mono text-inkmut hidden sm:table-cell">{fmt(sales.reduce((s, x) => s + x.shipping_cost, 0))}</td>
                   <td className="px-4 py-3 text-right font-mono font-bold">
-                    <span className={totalProfit >= 0 ? 'text-green-400' : 'text-red-400'}>{fmt(totalProfit)}</span>
+                    <span className={totalProfit >= 0 ? 'text-moss' : 'text-clay'}>{fmt(totalProfit)}</span>
                   </td>
                   <td colSpan={2} />
                 </tr>
@@ -240,9 +240,9 @@ export default function Sold() {
       )}
       {confirmDelete && (
         <Modal title="Delete Sale" onClose={() => setConfirmDelete(null)}>
-          <p className="text-gray-400 text-sm mb-4">Delete sale record for <span className="text-white">{confirmDelete.item?.name}</span>?</p>
+          <p className="text-inkmut text-sm mb-4">Delete sale record for <span className="text-ink">{confirmDelete.item?.name}</span>?</p>
           <div className="flex gap-2">
-            <button onClick={() => handleDelete(confirmDelete.id)} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-medium py-2 rounded-xl transition-colors">Delete</button>
+            <button onClick={() => handleDelete(confirmDelete.id)} className="flex-1 bg-clay hover:bg-clay text-ink font-medium py-2 rounded transition-colors">Delete</button>
             <button onClick={() => setConfirmDelete(null)} className="btn-ghost flex-1 text-center">Cancel</button>
           </div>
         </Modal>

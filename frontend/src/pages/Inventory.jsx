@@ -37,7 +37,7 @@ function QuickListForm({ item, onSubmit, onClose }) {
 
   return (
     <form onSubmit={handle} className="space-y-3">
-      <p className="text-sm text-gray-400">Listing <span className="text-white font-medium">{item.name}</span></p>
+      <p className="text-sm text-inkmut">Listing <span className="text-ink font-medium">{item.name}</span></p>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label block mb-1">Asking Price</label>
@@ -58,7 +58,7 @@ function QuickListForm({ item, onSubmit, onClose }) {
         <label className="label block mb-1">URL (optional)</label>
         <input className="input" type="url" value={form.url} onChange={e => set('url', e.target.value)} placeholder="https://..." />
       </div>
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-clay text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
         <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Listing…' : 'Create Listing'}</button>
         <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
@@ -97,7 +97,7 @@ function QuickSellForm({ item, onSubmit, onClose }) {
 
   return (
     <form onSubmit={handle} className="space-y-3">
-      <p className="text-sm text-gray-400">Recording sale for <span className="text-white font-medium">{item.name}</span> <span className="text-gray-600 font-mono">(cost: {fmt(item.purchase_price)})</span></p>
+      <p className="text-sm text-inkmut">Recording sale for <span className="text-ink font-medium">{item.name}</span> <span className="text-inkfaint font-mono">(cost: {fmt(item.purchase_price)})</span></p>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label block mb-1">Sale Price</label>
@@ -117,11 +117,11 @@ function QuickSellForm({ item, onSubmit, onClose }) {
         </div>
       </div>
       {net !== null && (
-        <div className={`rounded-xl border px-4 py-3 text-sm font-mono font-medium ${net >= 0 ? 'bg-green-950/30 border-green-800/30 text-green-400' : 'bg-red-950/30 border-red-800/30 text-red-400'}`}>
+        <div className={`rounded border px-4 py-3 text-sm font-mono font-medium ${net >= 0 ? 'bg-moss/10 border-moss/40 text-moss' : 'bg-clay/10 border-clay/40 text-clay'}`}>
           Net Profit: {fmt(net)}
         </div>
       )}
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-clay text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
         <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Recording…' : 'Record Sale'}</button>
         <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
@@ -203,8 +203,8 @@ function ItemForm({ initial, onSubmit, onClose }) {
 
       {/* Listing fields */}
       {form.status === 'Listed' && (
-        <div className="border-t border-[#1f1f1f] pt-3 space-y-2">
-          <p className="text-xs text-blue-400 font-medium uppercase tracking-wider">Listing Details</p>
+        <div className="border-t border-edge pt-3 space-y-2">
+          <p className="text-xs text-sea font-medium uppercase tracking-wider">Listing Details</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label block mb-1">Asking Price</label>
@@ -226,8 +226,8 @@ function ItemForm({ initial, onSubmit, onClose }) {
 
       {/* Sale fields */}
       {form.status === 'Sold' && (
-        <div className="border-t border-[#1f1f1f] pt-3 space-y-2">
-          <p className="text-xs text-green-400 font-medium uppercase tracking-wider">Sale Details</p>
+        <div className="border-t border-edge pt-3 space-y-2">
+          <p className="text-xs text-moss font-medium uppercase tracking-wider">Sale Details</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label block mb-1">Sale Price</label>
@@ -247,14 +247,14 @@ function ItemForm({ initial, onSubmit, onClose }) {
             </div>
           </div>
           {net !== null && (
-            <div className={`rounded-xl border px-4 py-3 text-sm font-mono font-medium ${net >= 0 ? 'bg-green-950/30 border-green-800/30 text-green-400' : 'bg-red-950/30 border-red-800/30 text-red-400'}`}>
+            <div className={`rounded border px-4 py-3 text-sm font-mono font-medium ${net >= 0 ? 'bg-moss/10 border-moss/40 text-moss' : 'bg-clay/10 border-clay/40 text-clay'}`}>
               Estimated Net Profit: {fmt(net)}
             </div>
           )}
         </div>
       )}
 
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-clay text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
         <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Saving…' : 'Save Item'}</button>
         <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
@@ -339,8 +339,8 @@ export default function Inventory() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-white">Inventory</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Track all items you've acquired</p>
+        <h1 className="text-2xl font-semibold text-ink">Inventory</h1>
+        <p className="text-sm text-inkmut mt-0.5">Track all items you've acquired</p>
       </div>
 
       {/* Stats grid */}
@@ -352,8 +352,8 @@ export default function Inventory() {
           { label: 'Total Invested', value: fmt(totalInvested) },
         ].map(({ label, value }) => (
           <div key={label} className="card px-4 py-3">
-            <div className="text-xs text-gray-500 mb-1">{label}</div>
-            <div className="text-xl font-bold text-white font-mono">{value}</div>
+            <div className="text-xs text-inkmut mb-1">{label}</div>
+            <div className="text-2xl font-semibold text-ink font-mono">{value}</div>
           </div>
         ))}
       </div>
@@ -361,7 +361,7 @@ export default function Inventory() {
       {/* Controls */}
       <div className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-inkfaint" />
           <input
             className="input pl-9"
             placeholder="Search inventory..."
@@ -379,7 +379,7 @@ export default function Inventory() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#1f1f1f]">
+              <tr className="border-b border-edge">
                 <th className="label px-4 py-3 text-left">Name</th>
                 <th className="label px-4 py-3 text-left">Status</th>
                 <th className="label px-4 py-3 text-right">Qty</th>
@@ -391,26 +391,26 @@ export default function Inventory() {
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-gray-600">
+                  <td colSpan={6} className="px-4 py-10 text-center text-inkfaint">
                     {search ? 'No items match your search' : 'No active inventory — add your first item'}
                   </td>
                 </tr>
               )}
               {filtered.map((item) => (
-                <tr key={item.id} className="border-b border-[#1a1a1a] hover:bg-[#161616] transition-colors">
-                  <td className="px-4 py-3 text-white font-medium">{item.name}</td>
+                <tr key={item.id} className="border-b border-edge hover:bg-sand transition-colors">
+                  <td className="px-4 py-3 text-ink font-medium">{item.name}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={item.status} />
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-300">{item.quantity}</td>
-                  <td className="px-4 py-3 text-right text-gray-300 hidden sm:table-cell font-mono">{fmt(item.purchase_price)}</td>
-                  <td className="px-4 py-3 text-gray-400 hidden md:table-cell">{fmtDate(item.date_acquired)}</td>
+                  <td className="px-4 py-3 text-right text-ink">{item.quantity}</td>
+                  <td className="px-4 py-3 text-right text-ink hidden sm:table-cell font-mono">{fmt(item.purchase_price)}</td>
+                  <td className="px-4 py-3 text-inkmut hidden md:table-cell">{fmtDate(item.date_acquired)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       {item.status !== 'Listed' && (
                         <button
                           onClick={() => setListTarget(item)}
-                          className="p-1.5 rounded-lg text-gray-500 hover:text-blue-400 hover:bg-blue-950/30 transition-colors"
+                          className="p-1.5 rounded text-inkmut hover:text-sea hover:bg-sea/10 transition-colors"
                           title="List this item"
                         >
                           <Tag className="w-3.5 h-3.5" />
@@ -418,28 +418,28 @@ export default function Inventory() {
                       )}
                       <button
                         onClick={() => setSellTarget(item)}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-green-400 hover:bg-green-950/30 transition-colors"
+                        className="p-1.5 rounded text-inkmut hover:text-moss hover:bg-moss/10 transition-colors"
                         title="Record sale"
                       >
                         <DollarSign className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setReceiptTarget({ id: item.id, name: item.name })}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-yellow-400 hover:bg-yellow-950/30 transition-colors"
+                        className="p-1.5 rounded text-inkmut hover:text-ochre hover:bg-ochre/10 transition-colors"
                         title="Receipts"
                       >
                         <Paperclip className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setModal(item)}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#222] transition-colors"
+                        className="p-1.5 rounded text-inkmut hover:text-ink hover:bg-sand transition-colors"
                         title="Edit"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => { setConfirmDelete(item); setDeleteError('') }}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-950/30 transition-colors"
+                        className="p-1.5 rounded text-inkmut hover:text-clay hover:bg-clay/10 transition-colors"
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -510,15 +510,15 @@ export default function Inventory() {
       {/* Delete confirm */}
       {confirmDelete && (
         <Modal title="Delete Item" onClose={() => { if (!deleting) { setConfirmDelete(null); setDeleteError('') } }}>
-          <p className="text-gray-400 text-sm mb-4">
-            Are you sure you want to delete <span className="text-white font-medium">{confirmDelete.name}</span>? This cannot be undone.
+          <p className="text-inkmut text-sm mb-4">
+            Are you sure you want to delete <span className="text-ink font-medium">{confirmDelete.name}</span>? This cannot be undone.
           </p>
-          {deleteError && <p className="text-red-400 text-sm mb-3">{deleteError}</p>}
+          {deleteError && <p className="text-clay text-sm mb-3">{deleteError}</p>}
           <div className="flex gap-2">
             <button
               onClick={() => handleDelete(confirmDelete.id)}
               disabled={deleting}
-              className="flex-1 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 rounded-xl transition-colors"
+              className="flex-1 bg-clay hover:bg-clay disabled:opacity-50 disabled:cursor-not-allowed text-ink font-medium py-2 rounded transition-colors"
             >
               {deleting ? 'Deleting…' : 'Delete'}
             </button>

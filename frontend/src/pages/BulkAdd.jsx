@@ -28,9 +28,9 @@ function rowStatus(r) {
 }
 
 const STATUS_STYLE = {
-  'In Stock': 'bg-[#1a1a1a] text-gray-400 border-[#333]',
-  'Listed':   'bg-blue-950/60 text-blue-300 border-blue-800/40',
-  'Sold':     'bg-green-950/60 text-green-400 border-green-800/40',
+  'In Stock': 'bg-sand text-inkmut border-edge',
+  'Listed':   'bg-sea/10 text-sea border-sea/40',
+  'Sold':     'bg-moss/10 text-moss border-moss/40',
 }
 
 const fmt = (n) =>
@@ -45,7 +45,7 @@ function NetPreview({ row }) {
     parseFloat(row.platform_fees || 0) -
     parseFloat(row.shipping_cost || 0) -
     parseFloat(row.purchase_price || 0)
-  const color = isNaN(net) ? 'text-gray-500' : net >= 0 ? 'text-green-400' : 'text-red-400'
+  const color = isNaN(net) ? 'text-inkmut' : net >= 0 ? 'text-moss' : 'text-clay'
   return (
     <span className={`text-xs font-mono ${color}`}>
       Net: {isNaN(net) ? '—' : fmt(net)}
@@ -71,7 +71,7 @@ function Row({ row, onChange, onRemove }) {
         <button
           type="button"
           onClick={() => set('_expanded', !row._expanded)}
-          className="text-gray-600 hover:text-gray-300 p-1 rounded transition-colors"
+          className="text-inkfaint hover:text-ink p-1 rounded transition-colors"
           title="Toggle optional fields"
         >
           {row._expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -79,7 +79,7 @@ function Row({ row, onChange, onRemove }) {
         <button
           type="button"
           onClick={onRemove}
-          className="text-gray-600 hover:text-red-400 p-1 rounded transition-colors"
+          className="text-inkfaint hover:text-clay p-1 rounded transition-colors"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -141,9 +141,9 @@ function Row({ row, onChange, onRemove }) {
 
       {/* Listing fields — shown when asking price filled or expanded */}
       {(showListing || row._expanded) && (
-        <div className="border-t border-[#1f1f1f] pt-3 space-y-2">
-          <p className="text-xs text-blue-400 font-medium uppercase tracking-wider">
-            Listing info <span className="text-gray-600 normal-case font-normal">— fills Asking Price → status becomes Listed</span>
+        <div className="border-t border-edge pt-3 space-y-2">
+          <p className="text-xs text-sea font-medium uppercase tracking-wider">
+            Listing info <span className="text-inkfaint normal-case font-normal">— fills Asking Price → status becomes Listed</span>
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <div>
@@ -179,9 +179,9 @@ function Row({ row, onChange, onRemove }) {
 
       {/* Sale fields — shown when sale price filled or expanded */}
       {(showSale || row._expanded) && (
-        <div className="border-t border-[#1f1f1f] pt-3 space-y-2">
-          <p className="text-xs text-green-400 font-medium uppercase tracking-wider">
-            Sale info <span className="text-gray-600 normal-case font-normal">— fills Sale Price → status becomes Sold</span>
+        <div className="border-t border-edge pt-3 space-y-2">
+          <p className="text-xs text-moss font-medium uppercase tracking-wider">
+            Sale info <span className="text-inkfaint normal-case font-normal">— fills Sale Price → status becomes Sold</span>
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div>
@@ -305,30 +305,30 @@ export default function BulkAdd() {
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-white">Bulk Add</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <h1 className="text-2xl font-semibold text-ink">Bulk Add</h1>
+        <p className="text-sm text-inkmut mt-0.5">
           Add multiple items at once — status is set automatically based on what you fill in
         </p>
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+      <div className="flex flex-wrap gap-3 text-xs text-inkmut">
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-gray-500" /> No extras → <strong className="text-gray-300">In Stock</strong>
+          <span className="w-2 h-2 rounded-full bg-inkfaint" /> No extras → <strong className="text-ink">In Stock</strong>
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-blue-500" /> Asking price filled → <strong className="text-blue-300">Listed</strong>
+          <span className="w-2 h-2 rounded-full bg-sea" /> Asking price filled → <strong className="text-sea">Listed</strong>
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-green-500" /> Sale price filled → <strong className="text-green-400">Sold</strong>
+          <span className="w-2 h-2 rounded-full bg-moss" /> Sale price filled → <strong className="text-moss">Sold</strong>
         </span>
       </div>
 
       {result && (
-        <div className="card p-4 border-green-800/30 bg-green-950/10 flex items-start gap-3">
-          <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+        <div className="card p-4 border-moss/40 bg-moss/10 flex items-start gap-3">
+          <CheckCircle className="w-5 h-5 text-moss flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-white font-medium">{result.added} item{result.added !== 1 ? 's' : ''} added</p>
+            <p className="text-ink font-medium">{result.added} item{result.added !== 1 ? 's' : ''} added</p>
             <div className="flex flex-wrap gap-2 mt-1">
               {result.items.map((item, i) => (
                 <span key={i} className={`text-xs px-2 py-0.5 rounded border ${STATUS_STYLE[item.status]}`}>
@@ -353,18 +353,18 @@ export default function BulkAdd() {
         <button
           type="button"
           onClick={addRow}
-          className="w-full py-2.5 border border-dashed border-[#2a2a2a] hover:border-green-700 text-gray-500 hover:text-green-400 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
+          className="w-full py-2.5 border border-dashed border-edge hover:border-moss/40 text-inkmut hover:text-moss rounded text-sm flex items-center justify-center gap-2 transition-colors"
         >
           <Plus className="w-4 h-4" /> Add another item
         </button>
 
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-clay text-sm">{error}</p>}
 
         <div className="flex items-center gap-3 pt-1">
           <button type="submit" disabled={loading} className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed">
             {loading ? 'Saving…' : `Save ${rows.filter(r => r.name && r.purchase_price).length || ''} Item${rows.length !== 1 ? 's' : ''}`}
           </button>
-          <div className="text-xs text-gray-600 flex gap-3">
+          <div className="text-xs text-inkfaint flex gap-3">
             {Object.entries(statusCounts).map(([s, n]) => (
               <span key={s}>{n} {s}</span>
             ))}

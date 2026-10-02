@@ -34,7 +34,7 @@ function QuickSellForm({ item, onSubmit, onClose }) {
 
   return (
     <form onSubmit={handle} className="space-y-3">
-      <p className="text-sm text-gray-400">Recording sale for <span className="text-white font-medium">{item.name}</span> <span className="text-gray-600 font-mono">(cost: {fmt(item.purchase_price)})</span></p>
+      <p className="text-sm text-inkmut">Recording sale for <span className="text-ink font-medium">{item.name}</span> <span className="text-inkfaint font-mono">(cost: {fmt(item.purchase_price)})</span></p>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label block mb-1">Sale Price</label>
@@ -54,11 +54,11 @@ function QuickSellForm({ item, onSubmit, onClose }) {
         </div>
       </div>
       {net !== null && (
-        <div className={`rounded-xl border px-4 py-3 text-sm font-mono font-medium ${net >= 0 ? 'bg-green-950/30 border-green-800/30 text-green-400' : 'bg-red-950/30 border-red-800/30 text-red-400'}`}>
+        <div className={`rounded border px-4 py-3 text-sm font-mono font-medium ${net >= 0 ? 'bg-moss/10 border-moss/40 text-moss' : 'bg-clay/10 border-clay/40 text-clay'}`}>
           Net Profit: {fmt(net)}
         </div>
       )}
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-clay text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
         <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Recording…' : 'Record Sale'}</button>
         <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
@@ -95,7 +95,7 @@ function ListingForm({ initial, itemName, items, onSubmit, onClose }) {
       <div>
         <label className="label block mb-1">Item</label>
         {isEdit ? (
-          <div className="input bg-[#111] text-white cursor-default">{itemName ?? `Item #${form.item_id}`}</div>
+          <div className="input bg-sand text-ink cursor-default">{itemName ?? `Item #${form.item_id}`}</div>
         ) : (
           <select className="input" required value={form.item_id} onChange={(e) => set('item_id', e.target.value)}>
             <option value="">Select item…</option>
@@ -123,7 +123,7 @@ function ListingForm({ initial, itemName, items, onSubmit, onClose }) {
         <label className="label block mb-1">URL (optional)</label>
         <input className="input" type="url" value={form.url} onChange={(e) => set('url', e.target.value)} placeholder="https://..." />
       </div>
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-clay text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
         <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Saving…' : 'Save Listing'}</button>
         <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
@@ -172,18 +172,18 @@ export default function Listings() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-white">Listings</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Items currently listed for sale</p>
+        <h1 className="text-2xl font-semibold text-ink">Listings</h1>
+        <p className="text-sm text-inkmut mt-0.5">Items currently listed for sale</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="card px-4 py-3">
-          <div className="text-xs text-gray-500 mb-1">Active Listings</div>
-          <div className="text-xl font-bold text-white font-mono">{activeListings.length}</div>
+          <div className="text-xs text-inkmut mb-1">Active Listings</div>
+          <div className="text-2xl font-semibold text-ink font-mono">{activeListings.length}</div>
         </div>
         <div className="card px-4 py-3">
-          <div className="text-xs text-gray-500 mb-1">Total Asking Value</div>
-          <div className="text-xl font-bold text-blue-400 font-mono">{fmt(totalAskingValue)}</div>
+          <div className="text-xs text-inkmut mb-1">Total Asking Value</div>
+          <div className="text-xl font-bold text-sea font-mono">{fmt(totalAskingValue)}</div>
         </div>
       </div>
 
@@ -197,7 +197,7 @@ export default function Listings() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#1f1f1f]">
+              <tr className="border-b border-edge">
                 <th className="label px-4 py-3 text-left">Item</th>
                 <th className="label px-4 py-3 text-left hidden sm:table-cell">Platform</th>
                 <th className="label px-4 py-3 text-right">Asking Price</th>
@@ -208,36 +208,36 @@ export default function Listings() {
             <tbody>
               {activeListings.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-gray-600">No listings yet</td>
+                  <td colSpan={5} className="px-4 py-10 text-center text-inkfaint">No listings yet</td>
                 </tr>
               )}
               {activeListings.map((l) => (
-                <tr key={l.id} className="border-b border-[#1a1a1a] hover:bg-[#161616] transition-colors">
+                <tr key={l.id} className="border-b border-edge hover:bg-sand transition-colors">
                   <td className="px-4 py-3">
-                    <div className="text-white font-medium">{l.item?.name ?? `Item #${l.item_id}`}</div>
-                    <div className="text-xs text-gray-500 sm:hidden">{l.platform}</div>
+                    <div className="text-ink font-medium">{l.item?.name ?? `Item #${l.item_id}`}</div>
+                    <div className="text-xs text-inkmut sm:hidden">{l.platform}</div>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
-                    <span className="text-xs bg-[#1a1a1a] border border-[#2a2a2a] text-gray-300 px-2 py-0.5 rounded-md">{l.platform}</span>
+                    <span className="text-xs bg-sand border border-edge text-ink px-2 py-0.5 rounded-md">{l.platform}</span>
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-green-400 font-medium">{fmt(l.asking_price)}</td>
-                  <td className="px-4 py-3 text-gray-400 hidden md:table-cell">{fmtDate(l.listed_date)}</td>
+                  <td className="px-4 py-3 text-right font-mono text-moss font-medium">{fmt(l.asking_price)}</td>
+                  <td className="px-4 py-3 text-inkmut hidden md:table-cell">{fmtDate(l.listed_date)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       {l.item && (
-                        <button onClick={() => setSellTarget(l)} className="p-1.5 rounded-lg text-gray-500 hover:text-green-400 hover:bg-green-950/30 transition-colors" title="Record sale">
+                        <button onClick={() => setSellTarget(l)} className="p-1.5 rounded text-inkmut hover:text-moss hover:bg-moss/10 transition-colors" title="Record sale">
                           <DollarSign className="w-3.5 h-3.5" />
                         </button>
                       )}
                       {l.url && (
-                        <a href={l.url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg text-gray-500 hover:text-blue-400 hover:bg-[#222] transition-colors">
+                        <a href={l.url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded text-inkmut hover:text-sea hover:bg-sand transition-colors">
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       )}
-                      <button onClick={() => setModal(l)} className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#222] transition-colors" title="Edit">
+                      <button onClick={() => setModal(l)} className="p-1.5 rounded text-inkmut hover:text-ink hover:bg-sand transition-colors" title="Edit">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => setConfirmDelete(l)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-950/30 transition-colors" title="Delete">
+                      <button onClick={() => setConfirmDelete(l)} className="p-1.5 rounded text-inkmut hover:text-clay hover:bg-clay/10 transition-colors" title="Delete">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -267,9 +267,9 @@ export default function Listings() {
       )}
       {confirmDelete && (
         <Modal title="Delete Listing" onClose={() => setConfirmDelete(null)}>
-          <p className="text-gray-400 text-sm mb-4">Delete listing for <span className="text-white">{confirmDelete.item?.name}</span>?</p>
+          <p className="text-inkmut text-sm mb-4">Delete listing for <span className="text-ink">{confirmDelete.item?.name}</span>?</p>
           <div className="flex gap-2">
-            <button onClick={() => handleDelete(confirmDelete.id)} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-medium py-2 rounded-xl transition-colors">Delete</button>
+            <button onClick={() => handleDelete(confirmDelete.id)} className="flex-1 bg-clay hover:bg-clay text-ink font-medium py-2 rounded transition-colors">Delete</button>
             <button onClick={() => setConfirmDelete(null)} className="btn-ghost flex-1 text-center">Cancel</button>
           </div>
         </Modal>

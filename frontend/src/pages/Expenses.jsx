@@ -90,18 +90,18 @@ function ExpenseForm({ initial, onSubmit, onClose }) {
       </div>
 
       {isMileage(form.category) && (
-        <div className={`rounded-xl border px-4 py-3 text-sm ${confirmed ? 'border-blue-800/30 bg-blue-950/20' : 'border-yellow-800/30 bg-yellow-950/20'}`}>
+        <div className={`rounded border px-4 py-3 text-sm ${confirmed ? 'border-sea/40 bg-sea/10' : 'border-yellow-800/30 bg-ochre/10'}`}>
           {mileageAmount !== null ? (
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-gray-400 font-mono text-xs">
+              <span className="text-inkmut font-mono text-xs">
                 {parseFloat(miles).toLocaleString()} mi × ${rate.toFixed(3)}/mi
               </span>
-              <span className="text-white font-mono font-semibold">{fmt(mileageAmount)}</span>
+              <span className="text-ink font-mono font-semibold">{fmt(mileageAmount)}</span>
             </div>
           ) : (
-            <span className="text-gray-500 text-xs">Enter miles to calculate amount</span>
+            <span className="text-inkmut text-xs">Enter miles to calculate amount</span>
           )}
-          <div className={`text-xs mt-1 ${confirmed ? 'text-blue-400/70' : 'text-yellow-400/70'}`}>
+          <div className={`text-xs mt-1 ${confirmed ? 'text-sea/70' : 'text-ochre/70'}`}>
             {confirmed
               ? `${year} IRS standard mileage rate`
               : `${year} rate not confirmed — using ${LATEST_MILEAGE_YEAR} rate. Verify at IRS.gov`}
@@ -118,7 +118,7 @@ function ExpenseForm({ initial, onSubmit, onClose }) {
           placeholder={isMileage(form.category) ? 'e.g. Parts run to Goodwill, eBay pickup' : 'e.g. Bubble wrap roll, 200ft'}
         />
       </div>
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-clay text-sm">{error}</p>}
       <div className="flex gap-2 pt-1">
         <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'Saving…' : 'Save Expense'}</button>
         <button type="button" onClick={onClose} className="btn-ghost flex-1 text-center">Cancel</button>
@@ -151,34 +151,34 @@ export default function Expenses() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-white">Expenses</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Overhead costs and business expenses</p>
+        <h1 className="text-2xl font-semibold text-ink">Expenses</h1>
+        <p className="text-sm text-inkmut mt-0.5">Overhead costs and business expenses</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="card px-4 py-3">
-          <div className="text-xs text-gray-500 mb-1">Total Expenses</div>
-          <div className="text-xl font-bold text-red-400 font-mono">{fmt(total)}</div>
+          <div className="text-xs text-inkmut mb-1">Total Expenses</div>
+          <div className="text-xl font-bold text-clay font-mono">{fmt(total)}</div>
         </div>
         <div className="card px-4 py-3">
-          <div className="text-xs text-gray-500 mb-1">Expense Records</div>
-          <div className="text-xl font-bold text-white font-mono">{expenses.length}</div>
+          <div className="text-xs text-inkmut mb-1">Expense Records</div>
+          <div className="text-2xl font-semibold text-ink font-mono">{expenses.length}</div>
         </div>
       </div>
 
       {/* Category breakdown */}
       {Object.keys(byCategory).length > 0 && (
         <div className="card p-4">
-          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-3">By Category</h3>
+          <h3 className="text-xs text-inkmut uppercase tracking-wider mb-3">By Category</h3>
           <div className="space-y-2">
             {Object.entries(byCategory).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => (
               <div key={cat} className="flex items-center justify-between">
-                <span className="text-sm text-gray-300">{cat}</span>
+                <span className="text-sm text-ink">{cat}</span>
                 <div className="flex items-center gap-3">
-                  <div className="w-24 bg-[#1f1f1f] rounded-full h-1.5 hidden sm:block">
-                    <div className="bg-red-500 h-1.5 rounded-full" style={{ width: `${(amt / total) * 100}%` }} />
+                  <div className="w-24 bg-sand rounded-full h-1.5 hidden sm:block">
+                    <div className="bg-clay h-1.5 rounded-full" style={{ width: `${(amt / total) * 100}%` }} />
                   </div>
-                  <span className="text-sm font-mono text-red-400 font-medium w-20 text-right">{fmt(amt)}</span>
+                  <span className="text-sm font-mono text-clay font-medium w-20 text-right">{fmt(amt)}</span>
                 </div>
               </div>
             ))}
@@ -196,7 +196,7 @@ export default function Expenses() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#1f1f1f]">
+              <tr className="border-b border-edge">
                 <th className="label px-4 py-3 text-left">Category</th>
                 <th className="label px-4 py-3 text-left hidden md:table-cell">Description</th>
                 <th className="label px-4 py-3 text-right">Amount</th>
@@ -206,29 +206,29 @@ export default function Expenses() {
             </thead>
             <tbody>
               {expenses.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-600">No expenses recorded yet</td></tr>
+                <tr><td colSpan={5} className="px-4 py-10 text-center text-inkfaint">No expenses recorded yet</td></tr>
               )}
               {expenses.map((e) => (
-                <tr key={e.id} className="border-b border-[#1a1a1a] hover:bg-[#161616] transition-colors">
+                <tr key={e.id} className="border-b border-edge hover:bg-sand transition-colors">
                   <td className="px-4 py-3">
-                    <span className="text-xs bg-[#1a1a1a] border border-[#2a2a2a] text-gray-300 px-2 py-0.5 rounded-md">{e.category}</span>
+                    <span className="text-xs bg-sand border border-edge text-ink px-2 py-0.5 rounded-md">{e.category}</span>
                   </td>
-                  <td className="px-4 py-3 text-gray-400 hidden md:table-cell">{e.description || '—'}</td>
-                  <td className="px-4 py-3 text-right font-mono font-medium text-red-400">{fmt(e.amount)}</td>
-                  <td className="px-4 py-3 text-gray-400 hidden sm:table-cell">{fmtDate(e.date)}</td>
+                  <td className="px-4 py-3 text-inkmut hidden md:table-cell">{e.description || '—'}</td>
+                  <td className="px-4 py-3 text-right font-mono font-medium text-clay">{fmt(e.amount)}</td>
+                  <td className="px-4 py-3 text-inkmut hidden sm:table-cell">{fmtDate(e.date)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => setReceiptTarget({ id: e.id, name: e.description || e.category })}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-yellow-400 hover:bg-yellow-950/30 transition-colors"
+                        className="p-1.5 rounded text-inkmut hover:text-ochre hover:bg-ochre/10 transition-colors"
                         title="Receipts"
                       >
                         <Paperclip className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => setModal(e)} className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#222] transition-colors">
+                      <button onClick={() => setModal(e)} className="p-1.5 rounded text-inkmut hover:text-ink hover:bg-sand transition-colors">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => setConfirmDelete(e)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-950/30 transition-colors">
+                      <button onClick={() => setConfirmDelete(e)} className="p-1.5 rounded text-inkmut hover:text-clay hover:bg-clay/10 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -265,9 +265,9 @@ export default function Expenses() {
       )}
       {confirmDelete && (
         <Modal title="Delete Expense" onClose={() => setConfirmDelete(null)}>
-          <p className="text-gray-400 text-sm mb-4">Delete <span className="text-white">{confirmDelete.category}</span> expense of <span className="text-red-400">{fmt(confirmDelete.amount)}</span>?</p>
+          <p className="text-inkmut text-sm mb-4">Delete <span className="text-ink">{confirmDelete.category}</span> expense of <span className="text-clay">{fmt(confirmDelete.amount)}</span>?</p>
           <div className="flex gap-2">
-            <button onClick={() => handleDelete(confirmDelete.id)} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-medium py-2 rounded-xl transition-colors">Delete</button>
+            <button onClick={() => handleDelete(confirmDelete.id)} className="flex-1 bg-clay hover:bg-clay text-ink font-medium py-2 rounded transition-colors">Delete</button>
             <button onClick={() => setConfirmDelete(null)} className="btn-ghost flex-1 text-center">Cancel</button>
           </div>
         </Modal>

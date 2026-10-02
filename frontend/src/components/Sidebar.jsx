@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, Package, Tag, DollarSign, Receipt, BarChart3, TrendingUp, X, PlusSquare, HardDrive
+  LayoutDashboard, Package, Tag, DollarSign, Receipt, BarChart3, X, PlusSquare, HardDrive
 } from 'lucide-react'
+import ThemeToggle from './ThemeToggle'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -36,12 +37,12 @@ function StorageIndicator() {
 
   const gb = info.bytes / (1024 ** 3)
   const color =
-    gb > 5 ? 'text-red-400' :
-    gb > 1 ? 'text-yellow-400' :
-    'text-gray-600'
+    gb > 5 ? 'text-clay' :
+    gb > 1 ? 'text-ochre' :
+    'text-inkfaint'
 
   return (
-    <div className="px-4 py-3 border-t border-[#1f1f1f] flex items-center gap-2">
+    <div className="px-4 py-3 border-t border-edge flex items-center gap-2">
       <HardDrive className={`w-3.5 h-3.5 flex-shrink-0 ${color}`} />
       <span className={`text-xs ${color}`}>{info.human} used</span>
     </div>
@@ -54,7 +55,7 @@ export default function Sidebar({ open, onClose }) {
       {/* Overlay */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
+          className="fixed inset-0 bg-ink/40 z-30 lg:hidden"
           onClick={onClose}
         />
       )}
@@ -62,23 +63,21 @@ export default function Sidebar({ open, onClose }) {
       {/* Sidebar panel */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 bg-[#0f0f0f] border-r border-[#1f1f1f] z-40
+          fixed top-0 left-0 h-full w-64 bg-paper border-r border-edge z-40
           flex flex-col transition-transform duration-200 ease-in-out
           ${open ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0 lg:static lg:z-auto
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-5 border-b border-[#1f1f1f]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-black" />
-            </div>
-            <span className="text-white font-bold text-lg tracking-tight">FlipTrack</span>
+        <div className="flex items-center justify-between px-5 py-5 border-b border-edge">
+          <div className="flex items-baseline gap-2">
+            <span className="font-display font-semibold text-[22px] text-ink leading-none">FlipTrack</span>
+            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-moss">est. 2026</span>
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden text-gray-500 hover:text-white p-1 rounded-lg"
+            className="lg:hidden text-inkmut hover:text-ink p-1 rounded"
           >
             <X className="w-5 h-5" />
           </button>
@@ -93,18 +92,24 @@ export default function Sidebar({ open, onClose }) {
               end={to === '/'}
               onClick={onClose}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                `flex items-center gap-3 px-3 py-2 rounded-sm text-sm transition-colors border-l-2 ${
                   isActive
-                    ? 'bg-green-900/40 text-green-400 border border-green-800/30'
-                    : 'text-gray-400 hover:text-white hover:bg-[#1a1a1a]'
+                    ? 'border-moss bg-cream text-ink font-semibold'
+                    : 'border-transparent text-inkmut hover:text-ink hover:bg-sand font-medium'
                 }`
               }
             >
-              <Icon className="w-4 h-4 flex-shrink-0" />
+              <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.75} />
               {label}
             </NavLink>
           ))}
         </nav>
+
+        {/* Theme toggle */}
+        <div className="px-4 py-3 border-t border-edge flex items-center justify-between">
+          <span className="label">Theme</span>
+          <ThemeToggle />
+        </div>
 
         {/* Storage indicator */}
         <StorageIndicator />
