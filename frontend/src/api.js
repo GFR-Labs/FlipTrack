@@ -36,6 +36,7 @@ export const api = {
   // Receipts / attachments
   getAllReceipts: () => req('GET', '/receipts/all'),
   updateReceipt: (id, data) => req('PATCH', `/receipts/${id}`, data),
+  deleteReceipt: (id) => req('DELETE', `/receipts/${id}`),
 
   // Listings
   getListings: () => req('GET', '/listings/'),

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Search, FileText, Image, ExternalLink, AlertTriangle, Check } from 'lucide-react'
+import { Search, FileText, Image, ExternalLink, AlertTriangle, Check, Trash2 } from 'lucide-react'
+import Modal from '../components/Modal'
 import { api } from '../api'
 import { RECEIPT_KINDS } from '../components/ReceiptModal'
 
@@ -53,6 +54,20 @@ function KindSelect({ receipt, onSaved }) {
 export default function Attachments() {
   const [receipts, setReceipts] = useState([])
   const [search, setSearch] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(null)
+  const [deleteError, setDeleteError] = useState('')
+
+  const handleDelete = async (id) => {
+    setDeleteError('')
+    try {
+      await api.deleteReceipt(id)
+      setConfirmDelete(null)
+      load()
+      window.dispatchEvent(new Event('storage-changed'))
+    } catch (err) {
+      setDeleteError(err.message)
+    }
+  }
 
   const load = () => api.getAllReceipts().then(setReceipts).catch(console.error)
   useEffect(() => { load() }, [])
@@ -103,12 +118,13 @@ export default function Attachments() {
                 <th className="label px-4 py-3 text-left">Attached To</th>
                 <th className="label px-4 py-3 text-right hidden sm:table-cell">Size</th>
                 <th className="label px-4 py-3 text-left hidden md:table-cell">Uploaded</th>
+                <th className="label px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-inkfaint">
+                  <td colSpan={6} className="px-4 py-10 text-center text-inkfaint">
                     {search ? 'No attachments match your search' : 'No receipts uploaded yet'}
                   </td>
                 </tr>
@@ -148,12 +164,43 @@ export default function Attachments() {
                   </td>
                   <td className="px-4 py-3 text-right text-inkmut font-mono hidden sm:table-cell">{fmtBytes(r.size_bytes)}</td>
                   <td className="px-4 py-3 text-inkmut hidden md:table-cell">{fmtDate(r.created_at)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => { setDeleteError(''); setConfirmDelete(r) }}
+                      className="p-1.5 rounded text-inkmut hover:text-clay hover:bg-clay/10 transition-colors"
+                      title="Delete attachment"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {confirmDelete && (
+        <Modal title="Delete Attachment" onClose={() => setConfirmDelete(null)}>
+          <p className="text-sm text-inkmut mb-2">
+            Delete <span className="text-ink font-medium">{confirmDelete.original_name}</span>
+            {' '}(attached to <span className="text-ink">{confirmDelete.entity_label}</span>)?
+          </p>
+          <p className="text-xs text-inkfaint mb-3">
+            This removes the record{confirmDelete.file_missing ? '' : ' and the file on disk'} permanently.
+          </p>
+          {deleteError && <p className="text-clay text-sm mb-3">{deleteError}</p>}
+          <div className="flex justify-end gap-2">
+            <button className="btn-ghost" onClick={() => setConfirmDelete(null)}>Cancel</button>
+            <button
+              className="bg-clay hover:bg-clay/80 text-white font-medium px-4 py-2 rounded transition-colors"
+              onClick={() => handleDelete(confirmDelete.id)}
+            >
+              Delete
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
