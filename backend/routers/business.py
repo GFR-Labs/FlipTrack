@@ -490,7 +490,7 @@ def export_zip(
             receipts_map[(r.entity_type, r.entity_id)].append(f"[FILE MISSING: {r.original_name}]")
             continue
         ext      = Path(r.filename).suffix
-        zip_name = f"receipts/{r.entity_type}_{r.entity_id}_{label}_{r.id}{ext}"
+        zip_name = f"receipts/{label}_{r.kind}-receipt_{r.id}{ext}"
         receipts_map[(r.entity_type, r.entity_id)].append(zip_name)
         disk_files.append((disk, zip_name))
 

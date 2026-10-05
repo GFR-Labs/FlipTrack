@@ -33,6 +33,10 @@ export const api = {
   deleteLot: (id) => req('DELETE', `/lots/${id}`),
   allocateLot: (id, data) => req('POST', `/lots/${id}/allocate`, data),
 
+  // Receipts / attachments
+  getAllReceipts: () => req('GET', '/receipts/all'),
+  updateReceipt: (id, data) => req('PATCH', `/receipts/${id}`, data),
+
   // Listings
   getListings: () => req('GET', '/listings/'),
   createListing: (data) => req('POST', '/listings/', data),

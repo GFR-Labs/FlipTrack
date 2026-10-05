@@ -3,6 +3,15 @@ import { X, Upload, Trash2, FileText, ExternalLink, Paperclip } from 'lucide-rea
 
 const BASE = '/api'
 
+export const RECEIPT_KINDS = [
+  { value: 'sourcing', label: 'Sourcing receipt' },
+  { value: 'sale', label: 'Sale receipt' },
+  { value: 'expense', label: 'Expense receipt' },
+  { value: 'other', label: 'Other' },
+]
+const DEFAULT_KIND = { item: 'sourcing', lot: 'sourcing', sale: 'sale', expense: 'expense' }
+const kindLabel = (k) => RECEIPT_KINDS.find((x) => x.value === k)?.label ?? k
+
 function fmtBytes(b) {
   if (b < 1024) return `${b} B`
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`
@@ -38,7 +47,7 @@ function ReceiptThumb({ receipt, onDelete }) {
 
       {/* Footer */}
       <div className="px-2 py-1.5 flex items-center justify-between gap-1">
-        <span className="text-xs text-inkfaint truncate">{fmtBytes(receipt.size_bytes)}</span>
+        <span className="text-xs text-inkfaint truncate">{kindLabel(receipt.kind)} · {fmtBytes(receipt.size_bytes)}</span>
         <div className="flex items-center gap-1 flex-shrink-0">
           <a
             href={fileUrl}
@@ -79,6 +88,7 @@ function ReceiptThumb({ receipt, onDelete }) {
 
 export default function ReceiptModal({ entityType, entityId, entityName, onClose }) {
   const [receipts, setReceipts] = useState([])
+  const [kind, setKind] = useState(DEFAULT_KIND[entityType] ?? 'other')
   const [uploading, setUploading] = useState(false)
   const [drag, setDrag] = useState(false)
   const [error, setError] = useState('')
@@ -105,7 +115,7 @@ export default function ReceiptModal({ entityType, entityId, entityName, onClose
       const body = new FormData()
       body.append('file', file)
       const res = await fetch(
-        `${BASE}/receipts/?entity_type=${entityType}&entity_id=${entityId}`,
+        `${BASE}/receipts/?entity_type=${entityType}&entity_id=${entityId}&kind=${kind}`,
         { method: 'POST', body }
       )
       if (!res.ok) {
@@ -161,6 +171,14 @@ export default function ReceiptModal({ entityType, entityId, entityName, onClose
               ))}
             </div>
           )}
+
+          {/* Kind selector for new uploads */}
+          <div className="flex items-center gap-2 mb-3">
+            <label className="label whitespace-nowrap">Upload as</label>
+            <select className="input py-1.5" value={kind} onChange={(e) => setKind(e.target.value)}>
+              {RECEIPT_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
+            </select>
+          </div>
 
           {/* Upload zone */}
           <div

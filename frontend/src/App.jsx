@@ -9,6 +9,7 @@ import Listings from './pages/Listings'
 import Sold from './pages/Sold'
 import Expenses from './pages/Expenses'
 import Business from './pages/Business'
+import Attachments from './pages/Attachments'
 import BulkAdd from './pages/BulkAdd'
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
               <Route path="/sold" element={<Sold />} />
               <Route path="/expenses" element={<Expenses />} />
               <Route path="/business" element={<Business />} />
+              <Route path="/attachments" element={<Attachments />} />
               <Route path="/bulk-add" element={<BulkAdd />} />
             </Routes>
           </main>

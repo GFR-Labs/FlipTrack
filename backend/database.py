@@ -27,6 +27,17 @@ def _migrate():
         cols = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(items)")}
         if "lot_id" not in cols:
             conn.exec_driver_sql("ALTER TABLE items ADD COLUMN lot_id INTEGER REFERENCES lots(id)")
+        rcols = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(receipts)")}
+        if "kind" not in rcols:
+            conn.exec_driver_sql("ALTER TABLE receipts ADD COLUMN kind VARCHAR NOT NULL DEFAULT 'other'")
+            # Backfill from what the receipt is attached to — the best guess
+            # for rows uploaded before kinds existed.
+            conn.exec_driver_sql(
+                "UPDATE receipts SET kind = CASE entity_type "
+                "WHEN 'item' THEN 'sourcing' WHEN 'lot' THEN 'sourcing' "
+                "WHEN 'sale' THEN 'sale' WHEN 'expense' THEN 'expense' "
+                "ELSE 'other' END"
+            )
         conn.commit()
 
 

@@ -6,12 +6,13 @@ from sqlmodel import Field, SQLModel, Relationship, select
 class Receipt(SQLModel, table=True):
     __tablename__ = "receipts"
     id: Optional[int] = Field(default=None, primary_key=True)
-    entity_type: str          # "item" | "expense" | "sale"
+    entity_type: str          # "item" | "expense" | "sale" | "lot"
     entity_id: int
-    filename: str             # UUID-based filename on disk
+    filename: str             # stored filename on disk (kind-based; legacy rows may be UUIDs)
     original_name: str
     mime_type: str
     size_bytes: int
+    kind: str = "other"       # "sourcing" | "sale" | "expense" | "other"
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
