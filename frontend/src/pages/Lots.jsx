@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Plus, Paperclip, Pencil, Trash2, ChevronDown, ChevronRight, Scale, SplitSquareHorizontal } from 'lucide-react'
+import { Plus, Paperclip, Pencil, Trash2, ChevronDown, ChevronRight, Scale, SplitSquareHorizontal, Unlink } from 'lucide-react'
 import { api } from '../api'
 import Modal from '../components/Modal'
 import ReceiptModal from '../components/ReceiptModal'
 import StatusBadge from '../components/StatusBadge'
+import SearchSelect from '../components/SearchSelect'
 
 const fmt = (n) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n ?? 0)
@@ -62,13 +63,19 @@ function LotForm({ initial, onSubmit, onClose }) {
   )
 }
 
-function AllocationEditor({ lot, onSaved }) {
+function AllocationEditor({ lot, freeItems, onSaved }) {
   // Draft costs as strings so partially-typed numbers don't fight the user
   const [costs, setCosts] = useState(() =>
     Object.fromEntries(lot.items.map((i) => [i.id, String(i.purchase_price)])))
   const [personal, setPersonal] = useState(String(lot.personal_use_cost ?? 0))
   const [personalNote, setPersonalNote] = useState(lot.personal_use_note ?? '')
   const [newItem, setNewItem] = useState('')
+  const membership = lot.items.map((i) => i.id).join(',')
+  useEffect(() => {
+    setCosts((prev) => Object.fromEntries(
+      lot.items.map((i) => [i.id, prev[i.id] ?? String(i.purchase_price)])
+    ))
+  }, [membership])  // eslint-disable-line react-hooks/exhaustive-deps
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -133,6 +140,7 @@ function AllocationEditor({ lot, onSaved }) {
               <th className="label text-left pb-2 hidden sm:table-cell">Status</th>
               <th className="label text-right pb-2 w-28">Cost $</th>
               <th className="label text-right pb-2 w-20">%</th>
+              <th className="pb-2 w-7"></th>
             </tr>
           </thead>
           <tbody>
@@ -147,6 +155,13 @@ function AllocationEditor({ lot, onSaved }) {
                 <td className="py-1 pl-2">
                   <input className="input text-right py-1" type="number" step="0.1" min="0"
                     value={pctOf(i.id)} onChange={(e) => setPct(i.id, e.target.value)} />
+                </td>
+                <td className="py-1 pl-1 w-7">
+                  <button type="button" title="Remove from lot (keeps the item)"
+                    className="p-1 rounded text-inkmut hover:text-clay hover:bg-clay/10 transition-colors"
+                    onClick={async () => { setBusy(true); setError(''); try { await api.updateItem(i.id, { lot_id: null }); onSaved() } catch (err) { setError(err.message) } finally { setBusy(false) } }}>
+                    <Unlink className="w-3.5 h-3.5" />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -163,6 +178,7 @@ function AllocationEditor({ lot, onSaved }) {
               <td className="py-1 pl-2 text-right text-inkmut text-xs">
                 {lot.total_cost > 0 ? `${r2((num(personal) / lot.total_cost) * 100)}%` : ''}
               </td>
+              <td></td>
             </tr>
           </tbody>
         </table>
@@ -178,6 +194,23 @@ function AllocationEditor({ lot, onSaved }) {
       </div>
 
       {error && <p className="text-clay text-sm">{error}</p>}
+
+      {freeItems.length > 0 && (
+        <div>
+          <label className="label block mb-1">Attach existing item</label>
+          <SearchSelect
+            placeholder="Search inventory & sold items not in any lot…"
+            value={null}
+            onChange={async (v) => {
+              if (v == null) return
+              setBusy(true); setError('')
+              try { await api.updateItem(v, { lot_id: lot.id }); onSaved() }
+              catch (err) { setError(err.message) } finally { setBusy(false) }
+            }}
+            options={freeItems.map((i) => ({ value: i.id, label: i.name, sublabel: `${i.status} · ${fmt(i.purchase_price)}` }))}
+          />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <form onSubmit={addItem} className="flex items-center gap-2 flex-1 min-w-48">
@@ -210,7 +243,11 @@ export default function Lots() {
   const [receiptTarget, setReceiptTarget] = useState(null)
   const [expanded, setExpanded] = useState(null)
 
-  const load = () => api.getLots().then(setLots).catch(console.error)
+  const [allItems, setAllItems] = useState([])
+  const load = () => {
+    api.getLots().then(setLots).catch(console.error)
+    api.getItems().then(setAllItems).catch(console.error)
+  }
   useEffect(() => { load() }, [])
 
   const handleAdd = async (data) => { await api.createLot(data); setModal(null); load() }
@@ -278,7 +315,7 @@ export default function Lots() {
               </button>
             </div>
           </div>
-          {expanded === lot.id && <AllocationEditor lot={lot} onSaved={load} />}
+          {expanded === lot.id && <AllocationEditor lot={lot} freeItems={allItems.filter((i) => !i.lot_id)} onSaved={load} />}
         </div>
       ))}
 

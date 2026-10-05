@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, ExternalLink, DollarSign } from 'lucide-react'
 import { api } from '../api'
 import Modal from '../components/Modal'
+import SearchSelect from '../components/SearchSelect'
 
 const PLATFORMS = ['eBay', 'Facebook Marketplace', 'Craigslist', 'OfferUp', 'Amazon', 'Other']
 const today = () => new Date().toISOString().slice(0, 10)
@@ -97,10 +98,13 @@ function ListingForm({ initial, itemName, items, onSubmit, onClose }) {
         {isEdit ? (
           <div className="input bg-sand text-ink cursor-default">{itemName ?? `Item #${form.item_id}`}</div>
         ) : (
-          <select className="input" required value={form.item_id} onChange={(e) => set('item_id', e.target.value)}>
-            <option value="">Select item…</option>
-            {items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
-          </select>
+          <SearchSelect
+            required
+            placeholder="Search items…"
+            value={form.item_id}
+            onChange={(v) => set('item_id', v)}
+            options={items.map((i) => ({ value: i.id, label: i.name, sublabel: `cost ${fmt(i.purchase_price)}` }))}
+          />
         )}
       </div>
       <div className="grid grid-cols-2 gap-3">

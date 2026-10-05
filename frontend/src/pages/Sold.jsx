@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, Paperclip } from 'lucide-react'
 import { api } from '../api'
 import Modal from '../components/Modal'
+import SearchSelect from '../components/SearchSelect'
 import ReceiptModal from '../components/ReceiptModal'
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -53,10 +54,13 @@ function SaleForm({ initial, editItem, items, onSubmit, onClose }) {
             {editItem && <span className="text-inkfaint font-mono"> (cost: {fmt(editItem.purchase_price)})</span>}
           </div>
         ) : (
-          <select className="input" required value={form.item_id} onChange={(e) => set('item_id', e.target.value)}>
-            <option value="">Select item…</option>
-            {items.map((i) => <option key={i.id} value={i.id}>{i.name} (cost: {fmt(i.purchase_price)})</option>)}
-          </select>
+          <SearchSelect
+            required
+            placeholder="Search items…"
+            value={form.item_id}
+            onChange={(v) => set('item_id', v)}
+            options={items.map((i) => ({ value: i.id, label: i.name, sublabel: `cost ${fmt(i.purchase_price)}` }))}
+          />
         )}
       </div>
       <div className="grid grid-cols-2 gap-3">

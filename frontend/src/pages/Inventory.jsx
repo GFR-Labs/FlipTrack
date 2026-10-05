@@ -4,6 +4,7 @@ import { api } from '../api'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
 import ReceiptModal from '../components/ReceiptModal'
+import SearchSelect from '../components/SearchSelect'
 
 const STATUSES = ['In Stock', 'Listed', 'Sold']
 const PLATFORMS = ['eBay', 'Facebook Marketplace', 'Craigslist', 'OfferUp', 'Amazon', 'Other']
@@ -130,11 +131,11 @@ function QuickSellForm({ item, onSubmit, onClose }) {
   )
 }
 
-function ItemForm({ initial, onSubmit, onClose }) {
+function ItemForm({ initial, lots = [], onSubmit, onClose }) {
   const isEdit = !!initial
   const [form, setForm] = useState({
     name: '', purchase_price: '', quantity: 1, status: 'In Stock',
-    date_acquired: today(), notes: '',
+    date_acquired: today(), notes: '', lot_id: null,
     // listing extras
     asking_price: '', platform: 'eBay', listed_date: today(),
     // sale extras
@@ -158,7 +159,7 @@ function ItemForm({ initial, onSubmit, onClose }) {
     setError('')
     setSaving(true)
     try {
-      await onSubmit({ ...form, purchase_price: parseFloat(form.purchase_price), quantity: parseInt(form.quantity) })
+      await onSubmit({ ...form, purchase_price: parseFloat(form.purchase_price), quantity: parseInt(form.quantity), lot_id: form.lot_id ? parseInt(form.lot_id) : null })
       onClose()
     } catch (err) {
       setError(err.message)
@@ -200,6 +201,18 @@ function ItemForm({ initial, onSubmit, onClose }) {
         <label className="label block mb-1">Notes</label>
         <textarea className="input resize-none" rows={2} value={form.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Optional notes..." />
       </div>
+      {lots.length > 0 && (
+        <div>
+          <label className="label block mb-1">Lot / Part-Out (optional)</label>
+          <SearchSelect
+            allowClear
+            placeholder="No lot — bought on its own"
+            value={form.lot_id}
+            onChange={(v) => set('lot_id', v)}
+            options={lots.map((l) => ({ value: l.id, label: l.name, sublabel: fmt(l.total_cost) }))}
+          />
+        </div>
+      )}
 
       {/* Listing fields */}
       {form.status === 'Listed' && (
@@ -274,7 +287,11 @@ export default function Inventory() {
   const [listTarget, setListTarget] = useState(null) // item for quick-list
   const [sellTarget, setSellTarget] = useState(null) // item for quick-sell
 
-  const load = () => api.getItems().then(setItems).catch(console.error)
+  const [lots, setLots] = useState([])
+  const load = () => {
+    api.getItems().then(setItems).catch(console.error)
+    api.getLots().then(setLots).catch(console.error)
+  }
   useEffect(() => {
     load()
     const onVisible = () => { if (document.visibilityState === 'visible') load() }
@@ -292,6 +309,7 @@ export default function Inventory() {
     i.name.toLowerCase().includes(search.toLowerCase())
   )
 
+  const lotNames = Object.fromEntries(lots.map((l) => [l.id, l.name]))
   const totalInvested = activeItems.reduce((s, i) => s + i.purchase_price * i.quantity, 0)
   const inStock = activeItems.filter((i) => i.status === 'In Stock').length
   const listed = activeItems.filter((i) => i.status === 'Listed').length
@@ -398,7 +416,14 @@ export default function Inventory() {
               )}
               {filtered.map((item) => (
                 <tr key={item.id} className="border-b border-edge hover:bg-sand transition-colors">
-                  <td className="px-4 py-3 text-ink font-medium">{item.name}</td>
+                  <td className="px-4 py-3 text-ink font-medium">
+                    {item.name}
+                    {item.lot_id && lotNames[item.lot_id] && (
+                      <span className="ml-2 text-[10px] uppercase tracking-wide bg-ochre/10 text-ochre border border-ochre/40 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
+                        {lotNames[item.lot_id]}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={item.status} />
                   </td>
@@ -456,7 +481,7 @@ export default function Inventory() {
       {/* Add modal */}
       {modal === 'add' && (
         <Modal title="Add Item" onClose={() => setModal(null)}>
-          <ItemForm onSubmit={handleAdd} onClose={() => setModal(null)} />
+          <ItemForm lots={lots} onSubmit={handleAdd} onClose={() => setModal(null)} />
         </Modal>
       )}
 
@@ -464,6 +489,7 @@ export default function Inventory() {
       {modal && modal !== 'add' && (
         <Modal title="Edit Item" onClose={() => setModal(null)}>
           <ItemForm
+            lots={lots}
             initial={{
               name: modal.name,
               purchase_price: modal.purchase_price,
