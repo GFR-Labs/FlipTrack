@@ -26,6 +26,13 @@ export const api = {
   updateItem: (id, data) => req('PATCH', `/inventory/${id}`, data),
   deleteItem: (id) => req('DELETE', `/inventory/${id}`),
 
+  // Lots / Part-Outs
+  getLots: () => req('GET', '/lots/'),
+  createLot: (data) => req('POST', '/lots/', data),
+  updateLot: (id, data) => req('PATCH', `/lots/${id}`, data),
+  deleteLot: (id) => req('DELETE', `/lots/${id}`),
+  allocateLot: (id, data) => req('POST', `/lots/${id}/allocate`, data),
+
   // Listings
   getListings: () => req('GET', '/listings/'),
   createListing: (data) => req('POST', '/listings/', data),

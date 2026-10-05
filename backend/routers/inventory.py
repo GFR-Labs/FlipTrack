@@ -2,11 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete
 from sqlmodel import Session, select
 from database import get_session
-from models import Item, ItemCreate, ItemRead, ItemUpdate, Listing, Sale, apply_updates
+from models import Item, ItemCreate, ItemRead, ItemUpdate, Listing, Lot, Sale, apply_updates, reprice_item
 
 router = APIRouter(prefix="/api/inventory", tags=["inventory"])
 
-NULLABLE = frozenset({"notes"})
+NULLABLE = frozenset({"notes", "lot_id"})
+
+
+def _check_lot(lot_id, session: Session):
+    if lot_id is not None and not session.get(Lot, lot_id):
+        raise HTTPException(status_code=404, detail="Lot not found")
 
 
 @router.get("/", response_model=list[ItemRead])
@@ -16,6 +21,7 @@ def list_items(session: Session = Depends(get_session)):
 
 @router.post("/", response_model=ItemRead, status_code=201)
 def create_item(item: ItemCreate, session: Session = Depends(get_session)):
+    _check_lot(item.lot_id, session)
     db_item = Item.model_validate(item)
     session.add(db_item)
     session.commit()
@@ -36,18 +42,15 @@ def update_item(item_id: int, updates: ItemUpdate, session: Session = Depends(ge
     item = session.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+    if "lot_id" in updates.model_dump(exclude_unset=True):
+        _check_lot(updates.lot_id, session)
     old_price = item.purchase_price
     apply_updates(item, updates, NULLABLE)
     session.add(item)
     # Keep recorded sales consistent: net_profit is derived from the item's
     # purchase price, so a price correction must flow through to past sales.
     if item.purchase_price != old_price:
-        sales = session.exec(select(Sale).where(Sale.item_id == item_id)).all()
-        for sale in sales:
-            sale.net_profit = round(
-                sale.sale_price - sale.platform_fees - sale.shipping_cost - item.purchase_price, 2
-            )
-            session.add(sale)
+        reprice_item(session, item, item.purchase_price)
     session.commit()
     session.refresh(item)
     return item

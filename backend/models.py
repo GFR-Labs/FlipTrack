@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import Optional
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, SQLModel, Relationship, select
 
 
 class Receipt(SQLModel, table=True):
@@ -15,6 +15,23 @@ class Receipt(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class Lot(SQLModel, table=True):
+    """A sourcing transaction (lot / part-out) whose cost is allocated across
+    the items pulled from it, plus an optional personal-use portion for parts
+    kept out of the business (documented, never deducted)."""
+    __tablename__ = "lots"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    total_cost: float
+    date_acquired: date
+    personal_use_cost: float = 0.0
+    personal_use_note: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    items: list["Item"] = Relationship(back_populates="lot")
+
+
 class Item(SQLModel, table=True):
     __tablename__ = "items"
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -24,10 +41,12 @@ class Item(SQLModel, table=True):
     status: str = "In Stock"  # In Stock | Listed | Sold
     date_acquired: date
     notes: Optional[str] = None
+    lot_id: Optional[int] = Field(default=None, foreign_key="lots.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     listings: list["Listing"] = Relationship(back_populates="item")
     sales: list["Sale"] = Relationship(back_populates="item")
+    lot: Optional[Lot] = Relationship(back_populates="items")
 
 
 class Listing(SQLModel, table=True):
@@ -76,6 +95,7 @@ class ItemCreate(SQLModel):
     status: str = "In Stock"
     date_acquired: date
     notes: Optional[str] = None
+    lot_id: Optional[int] = None
 
 
 class ItemRead(SQLModel):
@@ -86,6 +106,7 @@ class ItemRead(SQLModel):
     status: str
     date_acquired: date
     notes: Optional[str]
+    lot_id: Optional[int]
     created_at: datetime
 
 
@@ -96,6 +117,7 @@ class ItemUpdate(SQLModel):
     status: Optional[str] = None
     date_acquired: Optional[date] = None
     notes: Optional[str] = None
+    lot_id: Optional[int] = None
 
 
 class ListingCreate(SQLModel):
@@ -174,6 +196,35 @@ class ExpenseUpdate(SQLModel):
     description: Optional[str] = None
 
 
+# ── Lot schemas ─────────────────────────────────────────────────────────────
+
+class LotCreate(SQLModel):
+    name: str
+    total_cost: float
+    date_acquired: date
+    personal_use_cost: float = 0.0
+    personal_use_note: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class LotUpdate(SQLModel):
+    name: Optional[str] = None
+    total_cost: Optional[float] = None
+    date_acquired: Optional[date] = None
+    personal_use_cost: Optional[float] = None
+    personal_use_note: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class LotAllocation(SQLModel):
+    """Bulk cost allocation for a lot. `items` maps item_id -> allocated cost
+    in dollars (the frontend converts even splits and percentages to dollars
+    before sending). Personal-use fields are optional."""
+    items: dict[int, float] = {}
+    personal_use_cost: Optional[float] = None
+    personal_use_note: Optional[str] = None
+
+
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
 def item_payload(item: Optional[Item]) -> Optional[dict]:
@@ -201,3 +252,16 @@ def apply_updates(obj: SQLModel, updates: SQLModel, nullable: frozenset[str] = f
         if value is None and field not in nullable:
             continue
         setattr(obj, field, value)
+
+
+def reprice_item(session, item: Item, new_price: float) -> None:
+    """Change an item's purchase price and keep its recorded sales consistent:
+    net_profit derives from the purchase price, so every sale of the item is
+    recomputed. The caller commits."""
+    item.purchase_price = new_price
+    session.add(item)
+    for sale in session.exec(select(Sale).where(Sale.item_id == item.id)).all():
+        sale.net_profit = round(
+            sale.sale_price - sale.platform_fees - sale.shipping_cost - new_price, 2
+        )
+        session.add(sale)

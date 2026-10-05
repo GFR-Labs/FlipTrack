@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 from database import init_db
-from routers import inventory, listings, sold, expenses, dashboard, business, bulk_add, receipts, system
+from routers import inventory, listings, sold, expenses, dashboard, business, bulk_add, receipts, system, lots
 
 logger = logging.getLogger("fliptrack")
 
@@ -34,6 +34,7 @@ app.include_router(business.router)
 app.include_router(bulk_add.router)
 app.include_router(receipts.router)
 app.include_router(system.router)
+app.include_router(lots.router)
 
 
 @app.on_event("startup")

@@ -4,6 +4,7 @@ import { Menu } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import Inventory from './pages/Inventory'
+import Lots from './pages/Lots'
 import Listings from './pages/Listings'
 import Sold from './pages/Sold'
 import Expenses from './pages/Expenses'
@@ -34,6 +35,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/inventory" element={<Inventory />} />
+              <Route path="/lots" element={<Lots />} />
               <Route path="/listings" element={<Listings />} />
               <Route path="/sold" element={<Sold />} />
               <Route path="/expenses" element={<Expenses />} />

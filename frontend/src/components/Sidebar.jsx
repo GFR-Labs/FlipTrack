@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, Package, Tag, DollarSign, Receipt, BarChart3, X, PlusSquare, HardDrive
+  LayoutDashboard, Package, Boxes, Tag, DollarSign, Receipt, BarChart3, X, PlusSquare, HardDrive
 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/inventory', label: 'Inventory', icon: Package },
+  { to: '/lots', label: 'Lots / Part-Outs', icon: Boxes },
   { to: '/listings', label: 'Listings', icon: Tag },
   { to: '/sold', label: 'Sold', icon: DollarSign },
   { to: '/expenses', label: 'Expenses', icon: Receipt },

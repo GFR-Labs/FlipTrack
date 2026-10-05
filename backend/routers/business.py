@@ -13,7 +13,7 @@ from openpyxl.utils import get_column_letter
 from sqlmodel import Session, select
 
 from database import get_session
-from models import Expense, Item, Receipt, Sale
+from models import Expense, Item, Lot, Receipt, Sale
 
 RECEIPTS_DIR = Path("/data/receipts")
 router = APIRouter(prefix="/api/business", tags=["business"])
@@ -194,6 +194,7 @@ def _sales_sheet(ws, sales, items_map: dict, receipts_map: dict):
         net  = _sale_net(sale, items_map)
         receipts = ", ".join(
             receipts_map.get(("item", sale.item_id), [])
+            + (receipts_map.get(("lot", item.lot_id), []) if item and item.lot_id else [])
             + receipts_map.get(("sale", sale.id), [])
         )
 
@@ -342,7 +343,10 @@ def _inventory_sheet(ws, inventory_items, receipts_map: dict, as_of: date):
         qc = cell(3, item.quantity); qc.alignment = Alignment(horizontal="center")
         _money(ws, r, 4, item.purchase_price, color=FG_DARK, bg=bg)
         dc = cell(5, item.date_acquired); dc.number_format = "MMM DD, YYYY"; dc.alignment = Alignment(horizontal="center")
-        cell(6, ", ".join(receipts_map.get(("item", item.id), []))).font = _font(color="FF666666", size=9)
+        cell(6, ", ".join(
+            receipts_map.get(("item", item.id), [])
+            + (receipts_map.get(("lot", item.lot_id), []) if item.lot_id else [])
+        )).font = _font(color="FF666666", size=9)
         total += item.purchase_price
 
     tr = len(items) + 2
@@ -360,6 +364,54 @@ def _inventory_sheet(ws, inventory_items, receipts_map: dict, as_of: date):
     _set_widths(ws, widths)
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{max(tr - 1, 1)}"
+
+
+def _lots_sheet(ws, lots, lot_items: dict, receipts_map: dict):
+    """One row per sourcing lot, reconciling its total cost against the costs
+    allocated to items and personal use. Over-allocation is flagged in red."""
+    ws.title = "Lots - Part-Outs"
+    ws.sheet_view.showGridLines = False
+
+    headers = ["Lot", "Date", "Total Cost", "Allocated to Items", "Personal Use (not deducted)", "Unallocated", "# Items", "Notes", "Receipt Files"]
+    widths  = [30, 14, 13, 18, 24, 14, 9, 36, 44]
+    _header_row(ws, 1, headers)
+
+    for i, lot in enumerate(sorted(lots, key=lambda l: l.date_acquired)):
+        r  = i + 2
+        bg = BG_ALT if i % 2 else BG_WHITE
+        items = lot_items.get(lot.id, [])
+        allocated = round(sum(it.purchase_price for it in items), 2)
+        remaining = round(lot.total_cost - allocated - lot.personal_use_cost, 2)
+
+        def cell(col, val, _r=r, _bg=bg):
+            c = ws.cell(row=_r, column=col, value=val)
+            c.fill   = _fill(_bg)
+            c.border = _thin_border()
+            return c
+
+        cell(1, lot.name).font = _font(color=FG_DARK)
+        dc = cell(2, lot.date_acquired); dc.number_format = "MMM DD, YYYY"; dc.alignment = Alignment(horizontal="center")
+        _money(ws, r, 3, lot.total_cost,        color=FG_DARK, bg=bg)
+        _money(ws, r, 4, allocated,             color=FG_DARK, bg=bg)
+        _money(ws, r, 5, lot.personal_use_cost, color=FG_DARK, bg=bg)
+        rc = _money(ws, r, 6, remaining, color=FG_RED if remaining < 0 else FG_DARK, bg=bg)
+        if remaining < 0:
+            rc.font = _font(bold=True, color=FG_RED)
+        ic = cell(7, len(items)); ic.alignment = Alignment(horizontal="center")
+        notes = []
+        if remaining < 0:
+            notes.append(f"OVER-ALLOCATED by ${-remaining:,.2f}")
+        if lot.personal_use_note:
+            notes.append(f"Personal use: {lot.personal_use_note}")
+        if lot.notes:
+            notes.append(lot.notes)
+        nc = cell(8, "; ".join(notes))
+        nc.font = _font(color=FG_RED if remaining < 0 else "FF555555", size=9)
+        cell(9, ", ".join(receipts_map.get(("lot", lot.id), []))).font = _font(color="FF666666", size=9)
+
+    _set_widths(ws, widths)
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{max(len(lots) + 1, 1)}"
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -388,6 +440,14 @@ def export_zip(
     sale_ids       = [s.id for s in sales]
     sales_by_id    = {s.id: s for s in sales}
 
+    # Sourcing lots: every lot, with ALL its items (sold or not, any period),
+    # since the allocation reconciliation must cover the whole lot.
+    lots     = session.exec(select(Lot)).all()
+    lots_map = {l.id: l for l in lots}
+    lot_items: dict[int, list[Item]] = defaultdict(list)
+    for it in session.exec(select(Item).where(Item.lot_id.is_not(None))).all():
+        lot_items[it.lot_id].append(it)
+
     raw_receipts: list[Receipt] = []
     if item_ids:
         raw_receipts += session.exec(
@@ -400,6 +460,10 @@ def export_zip(
     if sale_ids:
         raw_receipts += session.exec(
             select(Receipt).where(Receipt.entity_type == "sale", Receipt.entity_id.in_(sale_ids))
+        ).all()
+    if lots_map:
+        raw_receipts += session.exec(
+            select(Receipt).where(Receipt.entity_type == "lot", Receipt.entity_id.in_(list(lots_map)))
         ).all()
 
     # Build receipt maps
@@ -414,6 +478,9 @@ def export_zip(
             sale  = sales_by_id.get(r.entity_id)
             item  = items_map.get(sale.item_id) if sale else None
             label = _safe(item.name) if item else "sale"
+        elif r.entity_type == "lot":
+            lot   = lots_map.get(r.entity_id)
+            label = _safe(lot.name) if lot else "lot"
         else:
             exp   = expenses_by_id.get(r.entity_id)
             label = _safe(exp.description or exp.category) if exp else "expense"
@@ -437,6 +504,8 @@ def export_zip(
     _sales_sheet(ws2, sales, items_map, receipts_map)
     _expenses_sheet(ws3, expenses, receipts_map)
     _inventory_sheet(ws4, inventory_items, receipts_map, date.today())
+    if lots:
+        _lots_sheet(wb.create_sheet(), lots, lot_items, receipts_map)
 
     xlsx_buf = io.BytesIO()
     wb.save(xlsx_buf)

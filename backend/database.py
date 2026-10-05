@@ -16,6 +16,18 @@ def set_sqlite_pragmas(dbapi_conn, connection_record):
 
 def init_db():
     SQLModel.metadata.create_all(engine)
+    _migrate()
+
+
+def _migrate():
+    """Minimal in-place migrations: create_all only creates missing tables,
+    it never alters existing ones, so columns added to existing tables must
+    be bolted on here for databases created by older versions."""
+    with engine.connect() as conn:
+        cols = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(items)")}
+        if "lot_id" not in cols:
+            conn.exec_driver_sql("ALTER TABLE items ADD COLUMN lot_id INTEGER REFERENCES lots(id)")
+        conn.commit()
 
 
 def get_session():
